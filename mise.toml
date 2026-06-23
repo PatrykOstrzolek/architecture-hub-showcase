@@ -1,0 +1,4 @@
+[tools]
+node = "latest"
+php = "8.5.6"
+yarn = "latest"
