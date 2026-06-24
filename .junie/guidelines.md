@@ -14,6 +14,10 @@ Before implementing changes:
 * Avoid introducing new dependencies unless justified.
 * Keep code explicit and easy to understand.
 
+## Command Execution Rule
+
+Every `sulu`, `composer`, `php`, `npm`, and `npx` command will be run by the user. The assistant will receive the available log.
+
 ## Frontend
 
 * Use TypeScript.
