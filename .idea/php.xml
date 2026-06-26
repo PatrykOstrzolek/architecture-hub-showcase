@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="LaravelPint">
+    <laravel_pint_settings>
+      <laravel_pint_by_interpreter asDefaultInterpreter="true" interpreter_id="6c88b912-ca9b-490e-a21e-7aa52e23e080">
+        <option name="timeout" value="30000" />
+      </laravel_pint_by_interpreter>
+    </laravel_pint_settings>
+  </component>
   <component name="MessDetector">
     <phpmd_settings>
       <phpmd_by_interpreter asDefaultInterpreter="true" interpreter_id="6c88b912-ca9b-490e-a21e-7aa52e23e080" timeout="30000" />
@@ -222,6 +229,7 @@
       <path value="$PROJECT_DIR$/backend/vendor/friendsofsymfony/http-cache" />
       <path value="$PROJECT_DIR$/backend/vendor/friendsofsymfony/http-cache-bundle" />
       <path value="$PROJECT_DIR$/backend/vendor/handcraftedinthealps/goodby-csv" />
+      <path value="$PROJECT_DIR$/backend/vendor/sulu/headless-bundle" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2">

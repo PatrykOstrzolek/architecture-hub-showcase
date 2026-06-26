@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{# Fallback HTML view. The public experience is rendered by the Next.js frontend
+   against the headless JSON (`{path}.json`); this view only needs to stay valid. #}
+{% block content %}
+    <h1>{{ content.title }}</h1>
+
+    {% if content.contact %}
+        {% if content.contact.avatar %}
+            <img src="{{ content.contact.avatar.url }}" alt="{{ content.title }}"/>
+        {% endif %}
+        {% if content.contact.position %}<p>{{ content.contact.position }}</p>{% endif %}
+        {% if content.contact.note %}<p>{{ content.contact.note }}</p>{% endif %}
+    {% endif %}
+
+    {% if content.articles %}
+        <h2>Articles</h2>
+        <ul>
+            {% for article in content.articles %}
+                <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

@@ -42,13 +42,7 @@ Every `sulu`, `composer`, `php`, `npm`, and `npx` command will be run by the use
 
 This project uses mise.
 
-At the beginning of the session, initialize the environment:
-
-```bash
-export PATH="/opt/homebrew/bin:/Users/patryk/.local/share/mise/shims:$PATH"
-```
-
-Verify tool availability:
+## Verify tool availability:
 
 ```bash
 which php
@@ -58,16 +52,6 @@ which colima
 which npx
 which npm
 ```
-
-You do not need to re-run the PATH initialization before every command.
-
-Only re-run it if:
-
-* a new shell/session was started,
-* a command reports that a previously available tool cannot be found,
-* the environment appears to have been reset.
-
-If a command is not found, first verify PATH before assuming the tool is not installed.
 
 ## Memory Limit
 
@@ -96,7 +80,6 @@ Docker may be configured through Colima.
 Before using Docker:
 
 ```bash
-export PATH="/Users/patryk/.local/share/mise/shims:$PATH"
 which docker
 which colima
 docker context ls
@@ -134,12 +117,3 @@ Always show the error and propose a fix before performing cleanup.
 If the environment configuration is unclear, ask first.
 
 Do not guess paths, PHP versions, Composer configuration, Docker configuration, or deployment details.
-
-## Additional PATH Entries
-
-Some tools are installed via Homebrew.
-
-Before concluding that a tool is unavailable, initialize:
-
-```bash
-export PATH="/opt/homebrew/bin:/Users/patryk/.local/share/mise/shims:$PATH"

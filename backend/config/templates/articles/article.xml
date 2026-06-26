@@ -6,7 +6,7 @@
     <key>article</key>
 
     <view>articles/article</view>
-    <controller>Sulu\Content\UserInterface\Controller\Website\ContentController::indexAction</controller>
+    <controller>Sulu\Bundle\HeadlessBundle\Controller\HeadlessWebsiteController::indexAction</controller>
     <cacheLifetime>604800</cacheLifetime>
 
     <meta>
@@ -25,20 +25,157 @@
             </params>
 
             <tag name="sulu.rlp.part"/>
+            <tag name="sulu.search.field" role="title"/>
         </property>
 
-        <property name="url" type="page_tree_route">
+        <property name="url" type="page_tree_route" mandatory="true">
             <meta>
                 <title lang="en">Resourcelocator</title>
                 <title lang="de">Adresse</title>
             </meta>
         </property>
 
-        <property name="article" type="text_editor">
+        <!-- Summary: plain-text lead used for listings, teasers and search. -->
+        <property name="summary" type="text_area" mandatory="true">
             <meta>
-                <title lang="en">Article</title>
-                <title lang="de">Artikel</title>
+                <title lang="en">Summary</title>
+                <title lang="de">Zusammenfassung</title>
+                <info_text lang="en">Short lead shown in listings and search results.</info_text>
+            </meta>
+
+            <tag name="sulu.search.field" role="description"/>
+        </property>
+
+        <!-- Author: a built-in Contact (resolved inline for the byline). The author's
+             routed profile page (under /authors) references the same Contact. See ADR 0004. -->
+        <property name="author" type="single_contact_selection" mandatory="true">
+            <meta>
+                <title lang="en">Author</title>
+                <title lang="de">Autor</title>
+                <info_text lang="en">Select the author (a Contact). Their profile page lives under /authors.</info_text>
             </meta>
         </property>
+
+        <!-- Body: block-based so an article can mix prose, code, diagrams and callouts. -->
+        <block name="body" default-type="text" minOccurs="1" maxOccurs="50">
+            <meta>
+                <title lang="en">Body</title>
+                <title lang="de">Inhalt</title>
+            </meta>
+
+            <types>
+                <type name="text">
+                    <meta>
+                        <title lang="en">Text</title>
+                        <title lang="de">Text</title>
+                    </meta>
+                    <properties>
+                        <property name="text" type="text_editor" mandatory="true">
+                            <meta>
+                                <title lang="en">Text</title>
+                                <title lang="de">Text</title>
+                            </meta>
+
+                            <tag name="sulu.search.field"/>
+                        </property>
+                    </properties>
+                </type>
+
+                <type name="code">
+                    <meta>
+                        <title lang="en">Code sample</title>
+                        <title lang="de">Code-Beispiel</title>
+                    </meta>
+                    <properties>
+                        <property name="language" type="single_select" colspan="4">
+                            <meta>
+                                <title lang="en">Language</title>
+                                <title lang="de">Sprache</title>
+                            </meta>
+                            <params>
+                                <param name="default_value" value="plaintext"/>
+                                <param name="values" type="collection">
+                                    <param name="plaintext"><meta><title lang="en">Plain text</title></meta></param>
+                                    <param name="bash"><meta><title lang="en">Bash</title></meta></param>
+                                    <param name="json"><meta><title lang="en">JSON</title></meta></param>
+                                    <param name="yaml"><meta><title lang="en">YAML</title></meta></param>
+                                    <param name="php"><meta><title lang="en">PHP</title></meta></param>
+                                    <param name="javascript"><meta><title lang="en">JavaScript</title></meta></param>
+                                    <param name="typescript"><meta><title lang="en">TypeScript</title></meta></param>
+                                    <param name="sql"><meta><title lang="en">SQL</title></meta></param>
+                                    <param name="go"><meta><title lang="en">Go</title></meta></param>
+                                    <param name="python"><meta><title lang="en">Python</title></meta></param>
+                                </param>
+                            </params>
+                        </property>
+                        <property name="caption" type="text_line" colspan="8">
+                            <meta>
+                                <title lang="en">Caption</title>
+                                <title lang="de">Beschriftung</title>
+                            </meta>
+                        </property>
+                        <property name="code" type="text_area" mandatory="true">
+                            <meta>
+                                <title lang="en">Code</title>
+                                <title lang="de">Code</title>
+                            </meta>
+                        </property>
+                    </properties>
+                </type>
+
+                <type name="image">
+                    <meta>
+                        <title lang="en">Image / Diagram</title>
+                        <title lang="de">Bild / Diagramm</title>
+                    </meta>
+                    <properties>
+                        <property name="image" type="single_media_selection" mandatory="true">
+                            <meta>
+                                <title lang="en">Image</title>
+                                <title lang="de">Bild</title>
+                            </meta>
+                            <params>
+                                <param name="types" value="image"/>
+                            </params>
+                        </property>
+                        <property name="caption" type="text_line">
+                            <meta>
+                                <title lang="en">Caption</title>
+                                <title lang="de">Beschriftung</title>
+                            </meta>
+                        </property>
+                    </properties>
+                </type>
+
+                <type name="callout">
+                    <meta>
+                        <title lang="en">Callout</title>
+                        <title lang="de">Hinweis</title>
+                    </meta>
+                    <properties>
+                        <property name="style" type="single_select" colspan="4">
+                            <meta>
+                                <title lang="en">Style</title>
+                                <title lang="de">Stil</title>
+                            </meta>
+                            <params>
+                                <param name="default_value" value="info"/>
+                                <param name="values" type="collection">
+                                    <param name="info"><meta><title lang="en">Info</title></meta></param>
+                                    <param name="tip"><meta><title lang="en">Tip</title></meta></param>
+                                    <param name="warning"><meta><title lang="en">Warning</title></meta></param>
+                                </param>
+                            </params>
+                        </property>
+                        <property name="content" type="text_editor">
+                            <meta>
+                                <title lang="en">Content</title>
+                                <title lang="de">Inhalt</title>
+                            </meta>
+                        </property>
+                    </properties>
+                </type>
+            </types>
+        </block>
     </properties>
 </template>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "20fffe8829ef1026c58b32c28164e195",
+    "content-hash": "4a1a6cca389a30847f3d208f9db2408d",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -5221,6 +5221,66 @@
                 "source": "https://github.com/stof/StofDoctrineExtensionsBundle/tree/v1.15.3"
             },
             "time": "2026-01-23T08:45:07+00:00"
+        },
+        {
+            "name": "sulu/headless-bundle",
+            "version": "3.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sulu/SuluHeadlessBundle.git",
+                "reference": "d09c450481cac708f7b4115f60c0f5bc3ceab334"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sulu/SuluHeadlessBundle/zipball/d09c450481cac708f7b4115f60c0f5bc3ceab334",
+                "reference": "d09c450481cac708f7b4115f60c0f5bc3ceab334",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "sulu/sulu": "^3.0.6",
+                "symfony/config": "^6.4 || ^7.0",
+                "symfony/dependency-injection": "^6.4 || ^7.0",
+                "symfony/framework-bundle": "^6.4 || ^7.0",
+                "symfony/http-foundation": "^6.4 || ^7.0",
+                "symfony/http-kernel": "^6.4 || ^7.0"
+            },
+            "require-dev": {
+                "cmsig/seal-memory-adapter": "^0.12",
+                "coduo/php-matcher": "^6.0.14",
+                "handcraftedinthealps/code-coverage-checker": "^0.2.1",
+                "jangregor/phpstan-prophecy": "^1.0",
+                "php-cs-fixer/shim": "^3.0",
+                "phpspec/prophecy": "^1.8",
+                "phpspec/prophecy-phpunit": "^2.0",
+                "phpstan/phpstan": "^1.0 || ^2.0",
+                "phpstan/phpstan-doctrine": "^1.0 || ^2.0",
+                "phpstan/phpstan-phpunit": "^1.0 || ^2.0",
+                "phpstan/phpstan-symfony": "^1.0 || ^2.0",
+                "phpunit/phpunit": "^10.0 || ^11.0",
+                "symfony/browser-kit": "^6.4 || ^7.0",
+                "symfony/console": "^6.4 || ^7.0",
+                "symfony/dotenv": "^6.4 || ^7.0",
+                "symfony/error-handler": "^6.4 || ^7.0",
+                "symfony/monolog-bundle": "^3.1",
+                "thecodingmachine/phpstan-strict-rules": "^1.0"
+            },
+            "type": "sulu-bundle",
+            "autoload": {
+                "psr-4": {
+                    "Sulu\\Bundle\\HeadlessBundle\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Bundle that provides controllers and services for using Sulu as headless content management system",
+            "support": {
+                "issues": "https://github.com/sulu/SuluHeadlessBundle/issues",
+                "source": "https://github.com/sulu/SuluHeadlessBundle/tree/3.0.1"
+            },
+            "time": "2026-06-25T08:42:29+00:00"
         },
         {
             "name": "sulu/messenger",
@@ -14754,7 +14814,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -14762,6 +14822,6 @@
         "ext-ctype": "*",
         "ext-iconv": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

@@ -191,6 +191,18 @@
             "config/packages/stof_doctrine_extensions.yaml"
         ]
     },
+    "sulu/headless-bundle": {
+        "version": "3.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "3.0",
+            "ref": "b7baaad09652863022c753c4c6a944b47ccd2ec0"
+        },
+        "files": [
+            "config/routes/sulu_headless_website.yaml"
+        ]
+    },
     "symfony-cmf/routing-bundle": {
         "version": "3.1.2"
     },

@@ -1,1 +1,4 @@
 .idea
+# Local dev tooling (Playwright MCP browser driver, not a project artifact)
+tools/
+/.playwright-mcp/

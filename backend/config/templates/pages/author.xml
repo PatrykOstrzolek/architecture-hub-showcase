@@ -3,15 +3,15 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/template-1.0.xsd">
 
-    <key>homepage</key>
+    <key>author</key>
 
-    <view>pages/homepage</view>
+    <view>pages/author</view>
     <controller>Sulu\Bundle\HeadlessBundle\Controller\HeadlessWebsiteController::indexAction</controller>
-    <cacheLifetime>86400</cacheLifetime>
+    <cacheLifetime>604800</cacheLifetime>
 
     <meta>
-        <title lang="en">Homepage</title>
-        <title lang="de">Startseite</title>
+        <title lang="en">Author profile</title>
+        <title lang="de">Autorenprofil</title>
     </meta>
 
     <properties>
@@ -19,12 +19,14 @@
             <meta>
                 <title lang="en">Title</title>
                 <title lang="de">Titel</title>
+                <info_text lang="en">The author's display name (also used for the URL).</info_text>
             </meta>
             <params>
                 <param name="headline" value="true"/>
             </params>
 
             <tag name="sulu.rlp.part"/>
+            <tag name="sulu.search.field" role="title"/>
         </property>
 
         <property name="url" type="route" mandatory="true">
@@ -36,23 +38,22 @@
             <tag name="sulu.rlp"/>
         </property>
 
-        <!-- Auto article feed: a smart_content query over the `articles` provider.
-             Editors tune the filter/sort/limit; the list fills itself as articles
-             are published (no manual curation). `summary` is resolved alongside the
-             default title/url for the listing cards. -->
-        <property name="articles" type="smart_content">
+        <!-- The author identity: a built-in Contact (name, note→bio, avatar, position). -->
+        <property name="contact" type="single_contact_selection" mandatory="true">
+            <meta>
+                <title lang="en">Author (Contact)</title>
+                <title lang="de">Autor (Kontakt)</title>
+                <info_text lang="en">The Contact whose name, bio (note), avatar and position back this profile.</info_text>
+            </meta>
+        </property>
+
+        <!-- The author's articles, in a curated order (manual reverse relation, see ADR 0004). -->
+        <property name="articles" type="article_selection">
             <meta>
                 <title lang="en">Articles</title>
                 <title lang="de">Artikel</title>
-                <info_text lang="en">Latest articles, listed automatically. Optionally filter by category/tag, change the sort or set a limit.</info_text>
+                <info_text lang="en">Articles written by this author, in display order.</info_text>
             </meta>
-            <params>
-                <param name="provider" value="articles"/>
-                <param name="max_per_page" value="6"/>
-                <param name="properties" type="collection">
-                    <param name="summary" value="summary"/>
-                </param>
-            </params>
         </property>
     </properties>
 </template>

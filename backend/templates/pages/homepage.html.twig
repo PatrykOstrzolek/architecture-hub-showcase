@@ -1,7 +1,17 @@
 {% extends 'base.html.twig' %}
 
+{# Fallback HTML view. The public experience is rendered by the Next.js frontend
+   against the headless JSON (`/.json`); this view only needs to stay valid. The
+   `articles` smart_content resolves to a list of article items. #}
 {% block content %}
     <h1>{{ content.title }}</h1>
 
-    {{ content.article|raw }}
+    {% if content.articles %}
+        <h2>Latest articles</h2>
+        <ul>
+            {% for article in content.articles %}
+                <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}
