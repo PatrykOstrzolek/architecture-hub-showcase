@@ -1,69 +1,38 @@
 # Project Guidelines
 
-Before implementing changes:
-
-* Read relevant documentation from the docs directory.
-* Prefer existing patterns over introducing new ones.
-* Follow the project architecture and ADR decisions.
-* Ask for clarification when requirements are ambiguous.
+Architecture-hub-showcase: Sulu CMS headless backend + Next.js frontend demo.
 
 ## Development Principles
 
-* Prefer simplicity over complexity.
-* Avoid premature abstractions.
-* Avoid introducing new dependencies unless justified.
-* Keep code explicit and easy to understand.
+- Prefer simplicity over complexity.
+- Avoid premature abstractions; don't design for hypothetical future requirements.
+- Avoid new dependencies unless justified. Keep code explicit.
+- Prefer existing patterns. Follow ADR decisions.
+- Ask for clarification when requirements are ambiguous.
 
-## Command Execution Rule
+## Safety Rules
 
-Every `sulu`, `composer`, `php`, `npm`, and `npx` command will be run by the user. The assistant will receive the available log.
+Before executing any command containing:
 
-## Frontend
-
-* Use TypeScript.
-* Prefer React Server Components.
-* Use Client Components only when interactivity is required.
-* Use Tailwind CSS and shadcn/ui.
-* Prefer feature-based organization.
-
-## Backend
-
-* Sulu CMS is the source of truth for content.
-* Prefer built-in Sulu capabilities before creating custom solutions.
-* Do not introduce custom APIs unless explicitly required.
-
-## Documentation
-
-* Specifications are the source of truth.
-* Major decisions should be documented through ADRs.
-* Implementation should remain consistent with existing specifications.
-
-## Environment Bootstrap
-
-This project uses mise.
-
-## Verify tool availability:
-
-```bash
-which php
-which composer
-which docker
-which colima
-which npx
-which npm
+```
+rm -rf  /  git reset --hard  /  git clean -fd  /  docker system prune  /  docker volume rm
 ```
 
-## Memory Limit
+always ask for confirmation. Never delete project files after a failed install — show the error and propose a fix first.
 
-This environment uses PHP with a default memory limit of 128M.
+## Environment
 
-For Symfony, Sulu, cache warmup, cache clear, composer post-install scripts, and similar heavy operations, use:
+This project uses **mise** for tool management. Verify availability before starting:
 
 ```bash
-php -d memory_limit=1G
+which php && which composer && which docker && which colima && which npx && which npm
 ```
 
-Examples:
+If a tool is missing, ask the user — do not guess paths or install automatically.
+
+### PHP Memory Limit
+
+Default is 128M — insufficient for Symfony/Sulu heavy operations. Always use 1G for:
 
 ```bash
 php -d memory_limit=1G bin/console cache:clear
@@ -71,49 +40,37 @@ php -d memory_limit=1G bin/console cache:warmup
 php -d memory_limit=1G $(which composer) install
 ```
 
-Do not assume the default PHP memory limit is sufficient.
+### Docker
 
-## Docker
-
-Docker may be configured through Colima.
-
-Before using Docker:
+May be configured through Colima. Check context before use:
 
 ```bash
-which docker
-which colima
-docker context ls
+which docker && which colima && docker context ls
 ```
 
-If the active context is `colima`, verify:
+If the active context is `colima`, verify it is running:
 
 ```bash
 colima status
 ```
 
-If Colima is unavailable or not running, ask for guidance instead of modifying Docker configuration automatically.
-```
+If Colima is unavailable, ask the user — do not modify Docker configuration automatically.
 
-## Safety Rules
+## Frontend
 
-Before executing any command containing:
+- Use TypeScript.
+- Prefer React Server Components; Client Components only when interactivity is required.
+- Use Tailwind CSS and shadcn/ui.
+- Prefer feature-based organization.
 
-```bash
-rm -rf
-git reset --hard
-git clean -fd
-docker system prune
-docker volume rm
-```
+## Backend
 
-always ask for confirmation.
+- Sulu CMS is the source of truth for content.
+- Prefer built-in Sulu capabilities before custom solutions.
+- Do not introduce custom APIs unless explicitly required.
 
-Never delete project files automatically after a failed installation.
+## Documentation
 
-Always show the error and propose a fix before performing cleanup.
-
-## Uncertainty
-
-If the environment configuration is unclear, ask first.
-
-Do not guess paths, PHP versions, Composer configuration, Docker configuration, or deployment details.
+- Specifications are the source of truth. Read `docs/` before implementing.
+- Major decisions must be documented as ADRs.
+- Implementation must remain consistent with existing specifications.
