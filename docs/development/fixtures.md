@@ -48,6 +48,10 @@ The `--group=dev` fixtures live in `backend/src/DataFixtures/`:
 | `CategoryFixture` | 5 categories | ✅ `findOneBy(['key' => ...])` check |
 | `ContactFixture` | Jane Kowalski (second author) | ✅ `findOneBy` check |
 | `ArticleFixture` | 20 published articles from CSV | ✅ skips existing slugs; skips if homepage missing |
+| `AuthorPageFixture` | 2 published author profile pages + `/authors` listing page | ✅ skips existing slugs; skips if homepage missing |
+| `LearningPathFixture` | 3 learning path pages + `/learning-paths` listing page | ✅ skips existing slugs; skips if homepage missing |
+
+`AuthorPageFixture` uses `CreatePageMessage` + `ApplyWorkflowTransitionPageMessage` (same bus pattern as articles, but from `Sulu\Page\Application\Message`). Pages are routed under `/authors/` and use the `author` template. They are **Sulu Pages, not Articles**, so they never appear in `/api/articles` listings.
 
 `ArticleFixture` declares `DependentFixtureInterface` → tag/category/contact fixtures always run first and register their Doctrine references before articles load.
 

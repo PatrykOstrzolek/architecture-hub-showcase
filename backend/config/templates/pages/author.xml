@@ -38,16 +38,28 @@
             <tag name="sulu.rlp"/>
         </property>
 
-        <!-- The author identity: a built-in Contact (name, note→bio, avatar, position). -->
-        <property name="contact" type="single_contact_selection" mandatory="true">
+        <property name="photo" type="single_media_selection">
             <meta>
-                <title lang="en">Author (Contact)</title>
-                <title lang="de">Autor (Kontakt)</title>
-                <info_text lang="en">The Contact whose name, bio (note), avatar and position back this profile.</info_text>
+                <title lang="en">Photo</title>
+                <title lang="de">Foto</title>
             </meta>
         </property>
 
-        <!-- The author's articles, in a curated order (manual reverse relation, see ADR 0004). -->
+        <property name="position" type="text_line">
+            <meta>
+                <title lang="en">Position / Title</title>
+                <title lang="de">Position / Titel</title>
+            </meta>
+        </property>
+
+        <property name="bio" type="text_area">
+            <meta>
+                <title lang="en">Bio</title>
+                <title lang="de">Kurzbiografie</title>
+            </meta>
+        </property>
+
+        <!-- The author's articles, in a curated order. -->
         <property name="articles" type="article_selection">
             <meta>
                 <title lang="en">Articles</title>

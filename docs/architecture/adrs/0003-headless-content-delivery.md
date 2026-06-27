@@ -29,7 +29,8 @@ Two relevant principles constrain the choice:
 ## Decision
 
 Adopt the **official `sulu/SuluHeadlessBundle` (>= 3.0)** as the headless content delivery layer.
-Do **not** hand-roll custom delivery controllers or serializers.
+Prefer the bundle's built-in resolution path; add a thin custom controller **only** when the
+bundle cannot serve the need natively (e.g. paginated article listing, taxonomy filtering).
 
 ### Why this fits
 
@@ -91,11 +92,15 @@ The Next.js app fetches in RSC against (for the host-root, single-locale webspac
 
 *   `{path}.json` — page/article detail (content + `extension.excerpt.categories` / `.tags`).
 *   `/api/navigations/{contextKey}` — primary navigation / category-driven menus.
-*   `/api/search?q=` — search (can be backed by `cmsig/seal`).
+*   `/api/search?q=` — full-text search (backed by `cmsig/seal`).
+*   `/api/articles?page=&limit=` — paginated article listing (custom controller, see below).
+*   `/api/articles?category={key}` / `?tag={name}` — taxonomy filtering (custom controller).
 
-Listing/filtering by category or tag (an MVP acceptance criterion) is served via a SmartContent
-data provider on a listing template (rendered through the headless controller) and/or the search
-index, rather than ad-hoc database queries.
+**Custom controller gap**: `SuluHeadlessBundle` exposes individual page/article content and
+navigation/search APIs, but provides no native endpoint for paginated article listing or
+taxonomy-filtered listing. `ArticlesByTaxonomyController` fills this gap — it queries
+`ArticleDimensionContent` via ORM, filters in-process, and returns hits in the same shape
+as SEAL search results so the frontend uses one consistent model.
 
 ## Consequences
 
@@ -116,8 +121,9 @@ index, rather than ad-hoc database queries.
 ## Alternatives Considered
 
 1.  **Custom thin delivery controllers** using `Sulu\Content` `ContentResolver` directly.
-    Rejected: duplicates what the official bundle already provides and violates
-    "Minimal Customization".
+    Rejected for the general case (duplicates the bundle); accepted for the specific gap of
+    paginated/filtered article listing where the bundle provides no native API
+    (`ArticlesByTaxonomyController`).
 2.  **`handcraftedinthealps/sulu-headless-bundle` (2.x community fork)**.
     Rejected: not aligned with Sulu 3.0; superseded by the official bundle.
 3.  **api-platform / GraphQL layer over Doctrine**.

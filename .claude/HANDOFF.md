@@ -9,7 +9,7 @@
 | 5 | Learning Path content type (spec: `docs/product/features/learning-paths.md`) | ✅ Done |
 | 6 | Dev fixtures — 20 articles, CSV-based, idempotent | ✅ Done |
 | 7 | Homepage pagination (6 per page, URL-based) | ✅ Done |
-| 8 | Article reading-layout polish | ⬜ |
+| 8 | Article reading-layout polish | ✅ Done |
 
 ## Last verified state
 
@@ -21,7 +21,7 @@
   - `?category={key}` or `?tag={name}` — taxonomy filter, returns all matching articles
   - No filter + `?page=N&limit=N` — paginated list of all articles (newest first). Returns `{ _embedded: { hits }, total, page, limit, pages }`.
 - **`TagSelectionResolver`**, **`TaxonomyController`**, SEAL index: unchanged from previous session.
-- PHP server: `php -S 127.0.0.1:8000 -t public/ config/router.php`
+- PHP+nginx server: Docker container `backend-php-1` (`serversideup/php:8.5-fpm-nginx`), mapped `8000:8080`. Start with `docker compose up -d` from `backend/`. Do **not** run a local `php -S` process — it will shadow the container on port 8000.
 
 ### Frontend (working dir: `frontend/`)
 
@@ -37,6 +37,16 @@
 - SEAL index must be rebuilt after fixture load: `php -d memory_limit=1G bin/console cmsig:seal:reindex --drop`.
 - Nothing committed — all work in working tree. User handles commits.
 
-## Next session: Article reading-layout polish (#8)
+## Completed in last session: Article reading-layout polish (#8)
 
-No requirements defined yet — ask the user what to polish before starting.
+All 6 items done:
+- Typography & spacing (`block-renderer.tsx` — richText class, paragraph/list/blockquote/inline-code styles)
+- Author/contact block (`article-view.tsx` — bio card after body with size-14 avatar + `author.note`)
+- Article header (`article-view.tsx` — 4xl title, xl summary, `border-b` divider)
+- Related articles (`page.tsx` + `article-view.tsx` — "Keep reading" section, 3 cards fetched via `getArticles(1,4)` filtered by current URL)
+- Code block styling (`block-renderer.tsx` — dark zinc-900 body, zinc-800 header with language label)
+- Breadcrumbs (`article-view.tsx` — "← All articles" for regular articles; LP title + "Article N of M" for LP context)
+
+## Next session
+
+No backlog items remain. Add new items here before starting next session.
