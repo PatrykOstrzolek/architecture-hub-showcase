@@ -22,7 +22,7 @@ always ask for confirmation. Never delete project files after a failed install â
 
 ## Environment
 
-This project uses **mise** for tool management. Verify availability before starting:
+Verify tool availability before starting:
 
 ```bash
 which php && which composer && which docker && which colima && which npx && which npm

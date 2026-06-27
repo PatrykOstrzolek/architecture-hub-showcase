@@ -1,6 +1,16 @@
 version: '3'
 
 services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8080"
+    environment:
+      PHP_OPCACHE_ENABLE: 1
+    volumes:
+      - .:/var/www/html
 ###> symfony/mailer ###
   mailer:
     image: axllent/mailpit

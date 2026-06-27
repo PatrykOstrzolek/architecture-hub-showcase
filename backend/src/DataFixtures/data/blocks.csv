@@ -1,0 +1,121 @@
+article,block_id,type,text,style,content,language,caption,code
+understanding-the-cap-theorem,a101,text,"<p>The CAP theorem states that a distributed data store can guarantee at most two of three properties simultaneously: <strong>Consistency</strong> (every read returns the most recent write), <strong>Availability</strong> (every request gets a non-error response), and <strong>Partition Tolerance</strong> (the system continues operating despite network partitions). Because partitions are unavoidable in real networks, the practical choice is always between consistency and availability.</p>",,,,,
+understanding-the-cap-theorem,a102,callout,,info,"<p>CP systems (ZooKeeper, HBase) reject requests during a partition to preserve consistency. AP systems (Cassandra, CouchDB) accept requests and resolve conflicts later.</p>",,,
+eventual-consistency-in-practice,b101,text,"<p>Eventual consistency guarantees that, if no new updates are made, all replicas will eventually return the same value. It sacrifices immediate global agreement in favour of availability and low latency. The system converges through background processes like <em>read-repair</em>, <em>hinted handoff</em>, and <em>anti-entropy</em> reconciliation.</p>",,,,,
+eventual-consistency-in-practice,b102,callout,,tip,"<p>Conflict-free Replicated Data Types (CRDTs) make convergence mathematically guaranteed without coordination — a good fit for counters, sets, and last-write-wins registers.</p>",,,
+domain-driven-design-strategic-patterns,c101,text,"<p>Strategic DDD is about dividing a large domain into <strong>Bounded Contexts</strong> — explicit boundaries within which a model applies consistently. Each context has its own <em>Ubiquitous Language</em> shared between developers and domain experts. A <em>Context Map</em> documents how contexts relate: Shared Kernel, Customer-Supplier, Conformist, Anti-Corruption Layer, or Open Host Service.</p>",,,,,
+domain-driven-design-strategic-patterns,c102,code,,,,yaml,Context Map example,"OrderContext:
+  upstream: InventoryContext  # Inventory is upstream supplier
+  downstream: ShippingContext # Shipping conforms to Order
+  relationship: Customer-Supplier
+
+PaymentContext:
+  relationship: Shared-Kernel  # shared Money value object"
+domain-driven-design-aggregates,d101,text,"<p>An <strong>Aggregate</strong> is a cluster of domain objects treated as a single unit for data changes. Every aggregate has a <em>root entity</em> — the only object external code may hold a reference to. All modifications go through the root, which enforces invariants across the cluster. This is the primary mechanism for maintaining consistency without distributed transactions.</p>",,,,,
+domain-driven-design-aggregates,d102,callout,,warning,"<p>Keep aggregates small. A large aggregate becomes a contention hotspot — every write locks the entire cluster. If two concepts rarely change together, they probably belong in separate aggregates.</p>",,,
+value-objects-in-ddd,e101,text,"<p>A <strong>Value Object</strong> has no conceptual identity; it is defined entirely by its attributes. Two Money objects representing €10 are interchangeable regardless of which instance they are. Value objects should be <em>immutable</em>: operations return new instances rather than mutating state. This makes them safe to share across the model without defensive copying.</p>",,,,,
+value-objects-in-ddd,e102,code,,,,php,Immutable Money value object,"final class Money
+{
+    public function __construct(
+        private readonly int $amount,    // in cents
+        private readonly string $currency,
+    ) {}
+
+    public function add(Money $other): self
+    {
+        if ($this->currency !== $other->currency) {
+            throw new \DomainException('Currency mismatch');
+        }
+        return new self($this->amount + $other->amount, $this->currency);
+    }
+}"
+cqrs-command-query-responsibility-segregation,f101,text,"<p>CQRS splits an application's operations into <strong>Commands</strong> (intent to change state, no return value) and <strong>Queries</strong> (read state, no side effects). The write side enforces domain rules and emits events; the read side builds denormalised projections optimised for specific query patterns. The two sides can use completely different data models, databases, and scaling strategies.</p>",,,,,
+cqrs-command-query-responsibility-segregation,f102,callout,,tip,"<p>Don't apply CQRS everywhere. Start with a simple unified model and introduce CQRS only in bounded contexts where read and write load profiles genuinely diverge.</p>",,,
+event-sourcing-storing-state-as-events,g101,text,"<p>In event sourcing, the database is an <strong>append-only event log</strong>. Current state is a left-fold over all events for an aggregate. This gives you a complete audit trail, the ability to replay history for debugging, and a natural integration bus — other services subscribe to the same event stream. The trade-off is query complexity: you must build and maintain read-model projections.</p>",,,,,
+event-sourcing-storing-state-as-events,g102,code,,,,json,Event store entries for an Order,"{ ""type"": ""OrderPlaced"",   ""orderId"": ""ord-1"", ""total"": 49.99 }
+{ ""type"": ""ItemAdded"",     ""orderId"": ""ord-1"", ""sku"": ""ABC"", ""qty"": 2 }
+{ ""type"": ""OrderShipped"",  ""orderId"": ""ord-1"", ""trackingId"": ""TRK-99"" }"
+microservices-architecture-promises-and-pitfalls,h101,text,"<p>Microservices decompose an application into small, independently deployable services aligned to business capabilities. Each service owns its data store, can be deployed on its own release cadence, and can be scaled individually. The promises are real: teams move faster and blast radius is smaller. The pitfalls are equally real: network calls replace in-process calls, distributed tracing becomes essential, and data consistency requires choreography or sagas.</p>",,,,,
+microservices-architecture-promises-and-pitfalls,h102,callout,,warning,"<p>Don't start with microservices. Build a well-structured modular monolith first. Extract services only when you have clear operational reasons: independent scaling, independent deployment cadence, or isolated failure domains.</p>",,,
+hexagonal-architecture-ports-and-adapters,i101,text,"<p>Hexagonal architecture (Alistair Cockburn, 2005) places the application core at the centre with <strong>Ports</strong> (interfaces) on the boundary and <strong>Adapters</strong> as the implementations that connect to the outside world. The domain never imports infrastructure code — it imports only its own interfaces. Infrastructure imports the domain. This makes it trivial to swap databases, test without HTTP, or add a new delivery mechanism.</p>",,,,,
+hexagonal-architecture-ports-and-adapters,i102,callout,,tip,"<p>A port is just an interface. An adapter is a class that implements the port using real infrastructure (Doctrine, Redis, Symfony Mailer). In tests, use a fake adapter — no mocking frameworks needed.</p>",,,
+clean-architecture-the-dependency-rule,j101,text,"<p>Robert Martin's Clean Architecture organises code into concentric layers: <em>Entities</em> (enterprise-wide rules), <em>Use Cases</em> (application-specific rules), <em>Interface Adapters</em> (controllers, presenters, gateways), and <em>Frameworks & Drivers</em> (web, database, UI). The <strong>Dependency Rule</strong> is absolute: source code dependencies must point inward only. Nothing in an inner layer may name or depend on anything in an outer layer.</p>",,,,,
+clean-architecture-the-dependency-rule,j102,callout,,info,"<p>The dependency inversion principle is the mechanism that enforces the rule — inner layers define interfaces; outer layers implement them. The framework calls your code; your code never calls the framework directly.</p>",,,
+monolith-vs-microservices-when-to-split,k101,text,"<p>A well-structured modular monolith is the right default for most products. It is simpler to deploy, debug, and refactor. The signals that make splitting worthwhile are specific and operational: <em>independent team deployment cadence</em> (one team blocks another's releases), <em>independent scaling requirements</em> (one component needs 100× the resources of the rest), or <em>isolated failure domains</em> (one subsystem must keep running when another is down).</p>",,,,,
+monolith-vs-microservices-when-to-split,k102,callout,,info,"<p>Organise your monolith into modules with strict dependency rules first. Extract only the modules that meet the operational criteria above — and only after you have proven the boundary is stable enough to survive a network hop.</p>",,,
+api-gateway-pattern,l101,text,"<p>An API Gateway sits between clients and backend services, acting as the system's front door. It handles cross-cutting concerns — authentication, authorisation, rate limiting, SSL termination, request logging, and protocol translation — so individual services do not have to. It can also aggregate responses from multiple services into a single client-friendly payload (Backend for Frontend pattern).</p>",,,,,
+api-gateway-pattern,l102,callout,,tip,"<p>Do not put business logic in the gateway. Route, translate, and enforce policy — nothing more. Business decisions belong in the services behind it. A gateway that accumulates logic becomes a deployment bottleneck and single point of failure.</p>",,,
+saga-pattern-distributed-transactions,m101,text,"<p>A <strong>Saga</strong> is a sequence of local transactions where each step publishes an event or sends a message to trigger the next. If a step fails, the saga executes <em>compensating transactions</em> to undo the work already done. There are two coordination styles: <em>choreography</em> (each service reacts to events with no central orchestrator) and <em>orchestration</em> (a central saga orchestrator directs each participant).</p>",,,,,
+saga-pattern-distributed-transactions,m102,callout,,warning,"<p>Sagas are hard to debug. Compensating transactions must be idempotent and cannot truly ""rollback"" — they create new corrective state. Invest heavily in distributed tracing and saga state visualisation before going to production.</p>",,,
+circuit-breaker-pattern,n101,text,"<p>A circuit breaker wraps a remote call and tracks failure rates. In the <strong>Closed</strong> state, calls pass through normally. After a failure threshold is crossed, the breaker trips to <strong>Open</strong> and immediately rejects calls (fail fast). After a timeout, it enters <strong>Half-Open</strong> and allows a probe request: success resets to Closed, failure returns to Open.</p>",,,,,
+circuit-breaker-pattern,n102,callout,,info,"<p>Without a circuit breaker, a slow or failing downstream service holds threads open until the thread pool is exhausted, taking the caller offline too — a cascade failure. The breaker prevents the cascade by failing fast and giving the downstream service time to recover.</p>",,,
+the-outbox-pattern-for-reliable-messaging,o101,text,"<p>The <strong>dual-write problem</strong>: if you write to your database and then publish to a message broker, a crash between the two leaves them inconsistent. The outbox pattern solves this by writing messages to an <em>outbox table</em> in the same local transaction as the business data. A relay process reads the outbox and publishes to the broker, marking messages as sent. Atomicity is guaranteed by the database; the broker gets at-least-once delivery.</p>",,,,,
+the-outbox-pattern-for-reliable-messaging,o102,code,,,,sql,Outbox table structure,"CREATE TABLE outbox (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate   TEXT        NOT NULL,
+    event_type  TEXT        NOT NULL,
+    payload     JSONB       NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sent_at     TIMESTAMPTZ
+);"
+the-repository-pattern,p101,text,"<p>A <strong>Repository</strong> encapsulates the logic for querying and persisting aggregates, presenting a collection-like interface to the domain layer. The domain asks the repository for objects by identity or specification; it never writes SQL or calls an ORM directly. This decouples the domain from persistence infrastructure and makes it straightforward to test the domain with in-memory fakes.</p>",,,,,
+the-repository-pattern,p102,code,,,,php,Repository interface in the domain layer,"interface OrderRepository
+{
+    public function findById(OrderId $id): ?Order;
+    public function findPendingOlderThan(\DateTimeImmutable $cutoff): array;
+    public function save(Order $order): void;
+    public function remove(Order $order): void;
+}"
+factory-pattern-object-creation,q101,text,"<p>When constructing an object requires complex logic — choosing a concrete subclass, validating invariants, or coordinating multiple collaborators — that logic should not live in the caller or in the object itself. A <strong>Factory</strong> centralises creation, enforces invariants at construction time, and returns a fully initialised object. In DDD, factories are especially useful for creating aggregates whose initial state is non-trivial.</p>",,,,,
+factory-pattern-object-creation,q102,code,,,,php,Static factory method on an aggregate,"final class Order
+{
+    private function __construct(
+        private readonly OrderId $id,
+        private readonly CustomerId $customerId,
+        private array $items = [],
+    ) {}
+
+    public static function place(CustomerId $customerId, array $items): self
+    {
+        if (empty($items)) {
+            throw new \DomainException('An order must have at least one item.');
+        }
+        return new self(OrderId::generate(), $customerId, $items);
+    }
+}"
+strategy-pattern-encapsulating-algorithms,r101,text,"<p>The <strong>Strategy</strong> pattern defines a set of interchangeable algorithms behind a common interface. The context class delegates the algorithm to a strategy object rather than hard-coding it. This eliminates conditional branching inside the context and makes it easy to add new algorithms without modifying existing code — satisfying the Open/Closed Principle.</p>",,,,,
+strategy-pattern-encapsulating-algorithms,r102,code,,,,php,Shipping cost strategy,"interface ShippingStrategy
+{
+    public function calculate(Order $order): Money;
+}
+
+class StandardShipping implements ShippingStrategy { /* ... */ }
+class ExpressShipping implements ShippingStrategy { /* ... */ }
+
+class OrderPricer
+{
+    public function __construct(private readonly ShippingStrategy $shipping) {}
+
+    public function total(Order $order): Money
+    {
+        return $order->subtotal()->add($this->shipping->calculate($order));
+    }
+}"
+observer-pattern-and-event-driven-design,s101,text,"<p>The <strong>Observer</strong> pattern defines a one-to-many dependency: when a subject's state changes, all registered observers are notified automatically. This decouples the subject from its dependents — the subject does not know how many observers exist or what they do. Modern event buses, domain event dispatchers, and reactive streams all implement this idea at different scales.</p>",,,,,
+observer-pattern-and-event-driven-design,s102,callout,,tip,"<p>In domain-driven systems, raise domain events inside aggregates and dispatch them after the transaction commits. This keeps the aggregate focused on invariants while allowing side effects (sending emails, updating projections) to be handled by separate listeners.</p>",,,
+dependency-injection-and-ioc-containers,t101,text,"<p><strong>Dependency Injection</strong> means that a class receives its collaborators from the outside rather than creating them itself. Constructor injection is the clearest form: the dependencies are declared as constructor parameters and provided at instantiation. This inverts control — the class no longer owns its dependencies' lifecycle — and makes substitution (for testing or configuration) straightforward without any mocking framework.</p>",,,,,
+dependency-injection-and-ioc-containers,t102,code,,,,php,Constructor injection — no container magic needed in tests,"class OrderService
+{
+    public function __construct(
+        private readonly OrderRepository $orders,
+        private readonly EventBus $events,
+        private readonly Clock $clock,
+    ) {}
+}
+
+// In a test — plain PHP, no container:
+$service = new OrderService(
+    new InMemoryOrderRepository(),
+    new RecordingEventBus(),
+    new FixedClock('2026-03-06'),
+);"

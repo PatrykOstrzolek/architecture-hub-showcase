@@ -21,12 +21,61 @@ readonly class ArticlesByTaxonomyController
     public function getAction(Request $request): JsonResponse
     {
         $categoryKey = trim($request->query->getString('category'));
-        $tagName = trim($request->query->getString('tag'));
+        $tagName     = trim($request->query->getString('tag'));
 
-        if ('' === $categoryKey && '' === $tagName) {
-            return new JsonResponse(['_embedded' => ['hits' => []]]);
+        if ($categoryKey !== '' || $tagName !== '') {
+            return $this->taxonomyFilter($categoryKey, $tagName);
         }
 
+        return $this->paginatedList($request);
+    }
+
+    private function paginatedList(Request $request): JsonResponse
+    {
+        $page   = max(1, $request->query->getInt('page', 1));
+        $limit  = max(1, min(50, $request->query->getInt('limit', 6)));
+        $offset = ($page - 1) * $limit;
+
+        $base = $this->em->createQueryBuilder()
+            ->from(ArticleDimensionContent::class, 'dc')
+            ->where('dc.stage = :stage')
+            ->andWhere('dc.locale IS NOT NULL')
+            ->andWhere('dc.version = :version')
+            ->setParameter('stage', DimensionContentInterface::STAGE_LIVE)
+            ->setParameter('version', DimensionContentInterface::CURRENT_VERSION);
+
+        $total = (int) (clone $base)
+            ->select('COUNT(dc.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $rows = (clone $base)
+            ->select('dc.title', 'route.slug AS url', 'dc.authored', 'dc.templateData')
+            ->leftJoin('dc.route', 'route')
+            ->orderBy('dc.authored', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getArrayResult();
+
+        $hits = array_map(fn(array $row) => [
+            'title'      => $row['title'],
+            'url'        => $row['url'],
+            'content'    => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
+            'authoredAt' => $row['authored']?->format('c'),
+        ], $rows);
+
+        return new JsonResponse([
+            '_embedded' => ['hits' => $hits],
+            'total'     => $total,
+            'page'      => $page,
+            'limit'     => $limit,
+            'pages'     => (int) ceil($total / $limit),
+        ]);
+    }
+
+    private function taxonomyFilter(string $categoryKey, string $tagName): JsonResponse
+    {
         $filterIds = $categoryKey !== ''
             ? $this->resolveCategoryIds($categoryKey)
             : $this->resolveTagIds($tagName);
@@ -44,6 +93,7 @@ readonly class ArticlesByTaxonomyController
             ->andWhere('dc.version = :version')
             ->setParameter('stage', DimensionContentInterface::STAGE_LIVE)
             ->setParameter('version', DimensionContentInterface::CURRENT_VERSION)
+            ->orderBy('dc.authored', 'DESC')
             ->getQuery()
             ->getArrayResult();
 
@@ -56,9 +106,9 @@ readonly class ArticlesByTaxonomyController
                 continue;
             }
             $hits[] = [
-                'title' => $row['title'],
-                'url' => $row['url'],
-                'content' => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
+                'title'      => $row['title'],
+                'url'        => $row['url'],
+                'content'    => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
                 'authoredAt' => $row['authored']?->format('c'),
             ];
         }

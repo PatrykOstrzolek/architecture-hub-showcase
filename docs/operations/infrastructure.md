@@ -3,12 +3,11 @@
 This document outlines the infrastructure constraints and design for the Architecture Hub Showcase project.
 
 ## 1. Environment
-*   **Version Management**: The project uses [mise](https://mise.jdx.dev/) for managing tool versions (PHP, Node.js, etc.).
 *   **Containerization**: Docker is used for local development, with [Colima](https://github.com/abiosoft/colima) as the container runtime.
 *   **OS/Environment**: The development environment is MacOS.
 
 ## 2. Dependencies
-*   **PHP**: Sulu CMS requires a compatible PHP version (refer to `mise.toml`).
+*   **PHP**: Sulu CMS requires a compatible PHP version (see Dockerfile).
 *   **CMS**: Sulu CMS (Symfony-based).
 *   **Frontend**: Next.js (App Router).
 

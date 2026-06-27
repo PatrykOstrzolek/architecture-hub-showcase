@@ -11,16 +11,6 @@ The project is spec-driven. Please refer to the `docs/` directory for detailed s
 - `docs/operations/`: Infrastructure and deployment information.
 
 ## Setup
-This project uses `mise` for tool version management.
-
-### Prerequisites
-- [mise](https://mise.jdx.dev/)
-
-### Initial Setup
-Ensure your environment is set up by running:
-```bash
-mise install
-```
 
 ### Infrastructure
 Local development uses Docker and Colima. Ensure they are running before starting the application:
