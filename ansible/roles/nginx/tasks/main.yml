@@ -1,0 +1,32 @@
+- name: Install nginx and Certbot
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Deploy virtual host config
+  template:
+    src: app.conf.j2
+    dest: /etc/nginx/sites-available/architecture-hub
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/architecture-hub
+    dest: /etc/nginx/sites-enabled/architecture-hub
+    state: link
+  notify: Reload nginx
+
+- name: Enable and start nginx
+  systemd:
+    name: nginx
+    enabled: true
+    state: started

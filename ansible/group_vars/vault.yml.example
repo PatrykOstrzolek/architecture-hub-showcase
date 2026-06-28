@@ -1,0 +1,11 @@
+# Copy to vault.yml and encrypt with: ansible-vault encrypt vault.yml
+#
+# Variables here are referenced in roles as {{ vault_* }}.
+# All vault variables must stay out of version control.
+#
+vault_db_root_password: "change-me"
+vault_db_database: "architecture_hub"
+vault_db_user: "app"
+vault_db_password: "change-me"
+vault_app_secret: "change-me-32-char-symfony-secret"
+vault_ghcr_token: "ghp_your_github_personal_access_token"

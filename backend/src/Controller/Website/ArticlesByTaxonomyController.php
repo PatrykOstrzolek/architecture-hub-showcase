@@ -15,15 +15,17 @@ use Symfony\Component\Routing\Attribute\Route;
 
 readonly class ArticlesByTaxonomyController
 {
-    public function __construct(private EntityManagerInterface $em) {}
+    public function __construct(private EntityManagerInterface $em)
+    {
+    }
 
     #[Route('/api/articles', name: 'app.api.articles', methods: ['GET'])]
     public function getAction(Request $request): JsonResponse
     {
-        $categoryKey = trim($request->query->getString('category'));
-        $tagName     = trim($request->query->getString('tag'));
+        $categoryKey = \trim($request->query->getString('category'));
+        $tagName = \trim($request->query->getString('tag'));
 
-        if ($categoryKey !== '' || $tagName !== '') {
+        if ('' !== $categoryKey || '' !== $tagName) {
             return $this->taxonomyFilter($categoryKey, $tagName);
         }
 
@@ -32,8 +34,8 @@ readonly class ArticlesByTaxonomyController
 
     private function paginatedList(Request $request): JsonResponse
     {
-        $page   = max(1, $request->query->getInt('page', 1));
-        $limit  = max(1, min(50, $request->query->getInt('limit', 6)));
+        $page = \max(1, $request->query->getInt('page', 1));
+        $limit = \max(1, \min(50, $request->query->getInt('limit', 6)));
         $offset = ($page - 1) * $limit;
 
         $base = $this->em->createQueryBuilder()
@@ -49,6 +51,7 @@ readonly class ArticlesByTaxonomyController
             ->getQuery()
             ->getSingleScalarResult();
 
+        /** @var list<array{title: string|null, url: string|null, authored: \DateTimeInterface|null, templateData: array<string, mixed>}> $rows */
         $rows = (clone $base)
             ->select('dc.title', 'route.slug AS url', 'dc.authored', 'dc.templateData')
             ->leftJoin('dc.route', 'route')
@@ -58,25 +61,25 @@ readonly class ArticlesByTaxonomyController
             ->getQuery()
             ->getArrayResult();
 
-        $hits = array_map(fn(array $row) => [
-            'title'      => $row['title'],
-            'url'        => $row['url'],
-            'content'    => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
+        $hits = \array_map(static fn (array $row) => [
+            'title' => $row['title'],
+            'url' => $row['url'],
+            'content' => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
             'authoredAt' => $row['authored']?->format('c'),
         ], $rows);
 
         return new JsonResponse([
             '_embedded' => ['hits' => $hits],
-            'total'     => $total,
-            'page'      => $page,
-            'limit'     => $limit,
-            'pages'     => (int) ceil($total / $limit),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'pages' => (int) \ceil($total / $limit),
         ]);
     }
 
     private function taxonomyFilter(string $categoryKey, string $tagName): JsonResponse
     {
-        $filterIds = $categoryKey !== ''
+        $filterIds = '' !== $categoryKey
             ? $this->resolveCategoryIds($categoryKey)
             : $this->resolveTagIds($tagName);
 
@@ -84,6 +87,7 @@ readonly class ArticlesByTaxonomyController
             return new JsonResponse(['_embedded' => ['hits' => []]]);
         }
 
+        /** @var list<array{title: string|null, url: string|null, authored: \DateTimeInterface|null, templateData: array<string, mixed>}> $rows */
         $rows = $this->em->createQueryBuilder()
             ->select('dc.title', 'route.slug AS url', 'dc.authored', 'dc.templateData')
             ->from(ArticleDimensionContent::class, 'dc')
@@ -97,18 +101,19 @@ readonly class ArticlesByTaxonomyController
             ->getQuery()
             ->getArrayResult();
 
-        $field = $categoryKey !== '' ? 'categories' : 'tags';
+        $field = '' !== $categoryKey ? 'categories' : 'tags';
 
         $hits = [];
         foreach ($rows as $row) {
-            $ids = $row['templateData'][$field] ?? [];
-            if (!array_intersect($filterIds, (array) $ids)) {
+            /** @var array<int> $ids */
+            $ids = (array) ($row['templateData'][$field] ?? []);
+            if (!\array_intersect($filterIds, $ids)) {
                 continue;
             }
             $hits[] = [
-                'title'      => $row['title'],
-                'url'        => $row['url'],
-                'content'    => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
+                'title' => $row['title'],
+                'url' => $row['url'],
+                'content' => isset($row['templateData']['summary']) ? [$row['templateData']['summary']] : [],
                 'authoredAt' => $row['authored']?->format('c'),
             ];
         }
@@ -119,6 +124,7 @@ readonly class ArticlesByTaxonomyController
     /** @return int[] */
     private function resolveCategoryIds(string $key): array
     {
+        /** @var array{id: int|string}|null $result */
         $result = $this->em->createQueryBuilder()
             ->select('c.id')
             ->from(Category::class, 'c')
@@ -127,12 +133,13 @@ readonly class ArticlesByTaxonomyController
             ->getQuery()
             ->getOneOrNullResult();
 
-        return $result ? [(int) $result['id']] : [];
+        return null !== $result ? [(int) $result['id']] : [];
     }
 
     /** @return int[] */
     private function resolveTagIds(string $name): array
     {
+        /** @var array{id: int|string}|null $result */
         $result = $this->em->createQueryBuilder()
             ->select('t.id')
             ->from(Tag::class, 't')
@@ -141,6 +148,6 @@ readonly class ArticlesByTaxonomyController
             ->getQuery()
             ->getOneOrNullResult();
 
-        return $result ? [(int) $result['id']] : [];
+        return null !== $result ? [(int) $result['id']] : [];
     }
 }

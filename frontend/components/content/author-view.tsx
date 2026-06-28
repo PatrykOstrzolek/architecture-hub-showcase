@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { mediaUrl } from "@/lib/sulu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { articleHref, type AuthorContent } from "./types";
+import Link from "next/link"
+import { mediaUrl } from "@/lib/sulu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
+import { articleHref, type AuthorContent } from "./types"
 
 function initials(name: string): string {
   return name
@@ -10,11 +10,11 @@ function initials(name: string): string {
     .map((w) => w[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2)
 }
 
 export function AuthorView({ content }: { content: AuthorContent }) {
-  const articles = content.articles ?? [];
+  const articles = content.articles ?? []
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -32,17 +32,26 @@ export function AuthorView({ content }: { content: AuthorContent }) {
       <header className="mb-10 flex items-start gap-6">
         <Avatar className="size-20 shrink-0">
           {content.photo ? (
-            <AvatarImage src={mediaUrl(content.photo.url)} alt={content.title} />
+            <AvatarImage
+              src={mediaUrl(content.photo.url)}
+              alt={content.title}
+            />
           ) : null}
-          <AvatarFallback className="text-2xl">{initials(content.title)}</AvatarFallback>
+          <AvatarFallback className="text-2xl">
+            {initials(content.title)}
+          </AvatarFallback>
         </Avatar>
         <div className="space-y-2 pt-1">
           <h1 className="text-3xl font-bold tracking-tight">{content.title}</h1>
           {content.position ? (
-            <p className="text-base text-muted-foreground">{content.position}</p>
+            <p className="text-base text-muted-foreground">
+              {content.position}
+            </p>
           ) : null}
           {content.bio ? (
-            <p className="mt-3 leading-7 text-muted-foreground">{content.bio}</p>
+            <p className="mt-3 leading-7 text-muted-foreground">
+              {content.bio}
+            </p>
           ) : null}
         </div>
       </header>
@@ -86,5 +95,5 @@ export function AuthorView({ content }: { content: AuthorContent }) {
         )}
       </section>
     </div>
-  );
+  )
 }

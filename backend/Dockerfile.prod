@@ -1,0 +1,10 @@
+FROM serversideup/php:8.5-fpm-nginx AS builder
+USER root
+RUN install-php-extensions intl gd apcu opcache
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-scripts
+COPY . .
+RUN composer dump-autoload --optimize
+USER www-data

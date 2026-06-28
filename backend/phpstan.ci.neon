@@ -1,0 +1,16 @@
+includes:
+    - phpstan.dist.neon
+
+# CI runs without a database, so Symfony container XML and Doctrine object
+# manager (both require a booted kernel) are disabled. All PHP type checks
+# from phpstan.dist.neon still apply.
+parameters:
+    treatPhpDocTypesAsCertain: false
+    excludePaths:
+        - tests/phpstan
+        - tests/rector
+    doctrine:
+        objectManagerLoader: null
+    symfony:
+        containerXmlPath: null
+        consoleApplicationLoader: null

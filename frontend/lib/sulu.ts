@@ -21,10 +21,10 @@
  * See docs/architecture/adrs/0003-headless-content-delivery.md
  */
 
-const BASE_URL = process.env.SULU_BASE_URL ?? "http://localhost:8000";
+const BASE_URL = process.env.SULU_BASE_URL ?? "http://localhost:8000"
 
 /** Revalidation window (seconds) for cached content fetches. */
-const REVALIDATE_SECONDS = 60;
+const REVALIDATE_SECONDS = 60
 
 // --- Taxonomy -------------------------------------------------------------
 
@@ -37,13 +37,13 @@ const REVALIDATE_SECONDS = 60;
  * `SuluExcerpt.categories`, which carries raw category IDs, not these objects.
  */
 export interface SuluCategory {
-  id: number;
-  key: string | null;
-  name: string;
+  id: number
+  key: string | null
+  name: string
 }
 
 /** Resolved tag value. */
-export type SuluTag = string;
+export type SuluTag = string
 
 /**
  * Built-in excerpt extension — where page/article taxonomy lives.
@@ -58,34 +58,34 @@ export type SuluTag = string;
  * To render category names/links, resolve these IDs separately.
  */
 export interface SuluExcerpt {
-  title: string;
-  description: string;
-  more: string;
+  title: string
+  description: string
+  more: string
   /** Category IDs (resolve separately for names) — not resolved objects. */
-  categories: number[];
+  categories: number[]
   /** Tag name strings. */
-  tags: SuluTag[];
-  icon: unknown[];
-  image: unknown[];
-  audience_targeting_groups: unknown[];
-  segments: unknown[];
+  tags: SuluTag[]
+  icon: unknown[]
+  image: unknown[]
+  audience_targeting_groups: unknown[]
+  segments: unknown[]
 }
 
 /** SEO extension — served under `extension.seo`. */
 export interface SuluSeo {
-  title: string;
-  description: string;
-  keywords: string;
-  canonicalUrl: string;
-  noIndex: boolean;
-  noFollow: boolean;
-  hideInSitemap: boolean;
+  title: string
+  description: string
+  keywords: string
+  canonicalUrl: string
+  noIndex: boolean
+  noFollow: boolean
+  hideInSitemap: boolean
 }
 
 /** Built-in extensions bag attached to every page/article. */
 export interface SuluExtension {
-  excerpt: SuluExcerpt;
-  seo: SuluSeo;
+  excerpt: SuluExcerpt
+  seo: SuluSeo
 }
 
 // --- Media & Contacts -----------------------------------------------------
@@ -96,15 +96,15 @@ export interface SuluExtension {
  * placeholders for responsive variants.
  */
 export interface SuluMedia {
-  id: number;
-  title: string | null;
-  description: string | null;
-  name: string;
-  mimeType: string;
-  isImage: boolean;
-  url: string;
-  formatUri?: string;
-  formatPreferredExtension?: string;
+  id: number
+  title: string | null
+  description: string | null
+  name: string
+  mimeType: string
+  isImage: boolean
+  url: string
+  formatUri?: string
+  formatPreferredExtension?: string
 }
 
 /**
@@ -113,28 +113,28 @@ export interface SuluMedia {
  * to text; `avatar` is a full media object.
  */
 export interface SuluContact {
-  id: number;
-  fullName?: string;
-  firstName?: string;
-  lastName?: string;
-  position?: string | null;
-  title?: string | null;
-  note?: string | null;
-  avatar?: SuluMedia | null;
+  id: number
+  fullName?: string
+  firstName?: string
+  lastName?: string
+  position?: string | null
+  title?: string | null
+  note?: string | null
+  avatar?: SuluMedia | null
 }
 
 /** Absolutize a Sulu media URL against the backend host. */
 export function mediaUrl(path: string): string {
-  return path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  return path.startsWith("http") ? path : `${BASE_URL}${path}`
 }
 
 // --- Content --------------------------------------------------------------
 
 /** A locale alternate as advertised in `localizations`. */
 export interface SuluLocalization {
-  url: string;
-  locale: string;
-  alternate: boolean;
+  url: string
+  locale: string
+  alternate: boolean
 }
 
 /**
@@ -144,80 +144,83 @@ export interface SuluLocalization {
  * per-property view metadata (same keys as `content`).
  */
 export interface SuluContent<TContent = Record<string, unknown>> {
-  id: string;
-  type: "page" | "article" | string;
-  linkType: string | null;
-  template: string;
-  content: TContent;
-  view: Record<string, unknown>;
-  extension: SuluExtension;
-  author: string | null;
-  authored: string | null;
-  changer: string | null;
-  changed: string | null;
-  creator: string | null;
-  created: string | null;
-  localizations: Record<string, SuluLocalization>;
+  id: string
+  type: "page" | "article" | string
+  linkType: string | null
+  template: string
+  content: TContent
+  view: Record<string, unknown>
+  extension: SuluExtension
+  author: string | null
+  authored: string | null
+  changer: string | null
+  changed: string | null
+  creator: string | null
+  created: string | null
+  localizations: Record<string, SuluLocalization>
 }
 
 export interface SuluNavigationItem {
-  id: string;
-  title: string;
-  url: string;
-  children?: SuluNavigationItem[];
+  id: string
+  title: string
+  url: string
+  children?: SuluNavigationItem[]
 }
 
 /** A search hit from the cmsig/seal-backed website index. */
 export interface SuluSearchHit {
-  id?: string;
-  resourceKey?: string;
-  resourceId?: string;
-  locale?: string;
-  webspaces?: string[];
-  title: string;
-  url: string;
-  content: unknown[];
-  authoredAt: string | null;
-  _formatted?: Record<string, string | null>;
-  media?: unknown;
+  id?: string
+  resourceKey?: string
+  resourceId?: string
+  locale?: string
+  webspaces?: string[]
+  title: string
+  url: string
+  content: unknown[]
+  authoredAt: string | null
+  _formatted?: Record<string, string | null>
+  media?: unknown
 }
 
 /** A category suggestion returned by /api/taxonomy. */
 export interface SuluTaxonomyCategory {
-  id: number;
-  key: string;
-  name: string;
+  id: number
+  key: string
+  name: string
 }
 
 /** A tag suggestion returned by /api/taxonomy. */
 export interface SuluTaxonomyTag {
-  id: number;
-  name: string;
+  id: number
+  name: string
 }
 
 /** Autocomplete suggestions grouped by type. */
 export interface SuluTaxonomySuggestions {
-  categories: SuluTaxonomyCategory[];
-  tags: SuluTaxonomyTag[];
+  categories: SuluTaxonomyCategory[]
+  tags: SuluTaxonomyTag[]
 }
 
 // --- Fetch helpers --------------------------------------------------------
 
 class SuluNotFoundError extends Error {}
 
-async function suluFetch<T>(path: string, revalidate = REVALIDATE_SECONDS): Promise<T> {
+async function suluFetch<T>(
+  path: string,
+  revalidate = REVALIDATE_SECONDS
+): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { Accept: "application/json" },
     next: { revalidate },
-  });
+  })
 
   if (res.status === 404) {
-    throw new SuluNotFoundError(`Sulu content not found: ${path}`);
+    throw new SuluNotFoundError(`Sulu content not found: ${path}`)
   }
   if (!res.ok) {
-    throw new Error(`Sulu request failed (${res.status}): ${path}`);
+    throw new Error(`Sulu request failed (${res.status}): ${path}`)
   }
-  return res.json() as Promise<T>;
+  return res.json() as Promise<T>
 }
 
 // --- Public API -----------------------------------------------------------
@@ -228,68 +231,73 @@ async function suluFetch<T>(path: string, revalidate = REVALIDATE_SECONDS): Prom
  * Returns null when no content is published at that path.
  */
 export async function getContent<TContent = Record<string, unknown>>(
-  path: string,
+  path: string
 ): Promise<SuluContent<TContent> | null> {
   try {
-    return await suluFetch<SuluContent<TContent>>(`${path}.json`);
+    return await suluFetch<SuluContent<TContent>>(`${path}.json`)
   } catch (err) {
-    if (err instanceof SuluNotFoundError) return null;
-    throw err;
+    if (err instanceof SuluNotFoundError) return null
+    throw err
   }
 }
 
 /** Fetch a navigation tree by its Sulu navigation context key. */
 export async function getNavigation(
   context: string,
-  { depth = 1, flat = false }: { depth?: number; flat?: boolean } = {},
+  { depth = 1, flat = false }: { depth?: number; flat?: boolean } = {}
 ): Promise<SuluNavigationItem[]> {
-  const params = new URLSearchParams({ depth: String(depth), flat: String(flat) });
+  const params = new URLSearchParams({
+    depth: String(depth),
+    flat: String(flat),
+  })
   const data = await suluFetch<{ _embedded: { items: SuluNavigationItem[] } }>(
-    `/api/navigations/${context}?${params}`,
-  );
-  return data._embedded.items;
+    `/api/navigations/${context}?${params}`
+  )
+  return data._embedded.items
 }
 
 /** Full-text search across the website index. */
 export async function search(query: string): Promise<SuluSearchHit[]> {
-  const params = new URLSearchParams({ q: query });
+  const params = new URLSearchParams({ q: query })
   const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
     `/api/search?${params}`,
-    0,
-  );
+    0
+  )
   // Sulu/seal can return duplicate hits when multiple indices are configured;
   // deduplicate by URL before returning.
-  const seen = new Set<string>();
+  const seen = new Set<string>()
   return data._embedded.hits.filter((hit) => {
-    if (seen.has(hit.url)) return false;
-    seen.add(hit.url);
-    return true;
-  });
+    if (seen.has(hit.url)) return false
+    seen.add(hit.url)
+    return true
+  })
 }
 
 /** Articles filtered by category key or tag name. */
 export async function searchByTaxonomy(
-  filter: { category: string } | { tag: string },
+  filter: { category: string } | { tag: string }
 ): Promise<SuluSearchHit[]> {
-  const params = new URLSearchParams(filter);
+  const params = new URLSearchParams(filter)
   const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
     `/api/articles?${params}`,
-    0,
-  );
-  return data._embedded.hits;
+    0
+  )
+  return data._embedded.hits
 }
 
 export interface ArticlesPage {
-  _embedded: { hits: SuluSearchHit[] };
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
+  _embedded: { hits: SuluSearchHit[] }
+  total: number
+  page: number
+  limit: number
+  pages: number
 }
 
 /** Paginated article listing (newest first). */
 export async function getArticles(page = 1, limit = 6): Promise<ArticlesPage> {
-  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-  return suluFetch<ArticlesPage>(`/api/articles?${params}`, 0);
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  })
+  return suluFetch<ArticlesPage>(`/api/articles?${params}`, 0)
 }
-

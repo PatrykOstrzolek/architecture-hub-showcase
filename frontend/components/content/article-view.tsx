@@ -1,18 +1,18 @@
-import Link from "next/link";
-import { mediaUrl, type SuluSearchHit } from "@/lib/sulu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { BlockRenderer } from "./block-renderer";
-import type { ArticleContent, LearningPathContext } from "./types";
+import Link from "next/link"
+import { mediaUrl, type SuluSearchHit } from "@/lib/sulu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { BlockRenderer } from "./block-renderer"
+import type { ArticleContent, LearningPathContext } from "./types"
 
 function formatDate(iso: string | null): string | null {
-  if (!iso) return null;
+  if (!iso) return null
   return new Date(iso).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  });
+  })
 }
 
 export function ArticleView({
@@ -21,13 +21,13 @@ export function ArticleView({
   learningPath,
   relatedArticles,
 }: {
-  content: ArticleContent;
-  authored: string | null;
-  learningPath?: LearningPathContext;
-  relatedArticles?: SuluSearchHit[];
+  content: ArticleContent
+  authored: string | null
+  learningPath?: LearningPathContext
+  relatedArticles?: SuluSearchHit[]
 }) {
-  const author = content.author;
-  const date = formatDate(authored);
+  const author = content.author
+  const date = formatDate(authored)
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-12">
@@ -57,19 +57,27 @@ export function ArticleView({
 
       {/* Article header */}
       <header className="mb-10 space-y-5">
-        <h1 className="text-4xl font-bold leading-tight tracking-tight">{content.title}</h1>
+        <h1 className="text-4xl leading-tight font-bold tracking-tight">
+          {content.title}
+        </h1>
 
         {content.summary ? (
-          <p className="text-xl leading-relaxed text-muted-foreground">{content.summary}</p>
+          <p className="text-xl leading-relaxed text-muted-foreground">
+            {content.summary}
+          </p>
         ) : null}
 
-        {(content.categories?.length > 0 || content.tags?.length > 0) ? (
+        {content.categories?.length > 0 || content.tags?.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {content.categories?.map((cat) => (
-              <Badge key={cat.id} variant="default">{cat.name}</Badge>
+              <Badge key={cat.id} variant="default">
+                {cat.name}
+              </Badge>
             ))}
             {content.tags?.map((tag) => (
-              <Badge key={tag} variant="outline">{tag}</Badge>
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
             ))}
           </div>
         ) : null}
@@ -78,9 +86,14 @@ export function ArticleView({
           <div className="flex items-center gap-3">
             <Avatar className="size-9">
               {author.avatar ? (
-                <AvatarImage src={mediaUrl(author.avatar.url)} alt={author.fullName ?? ""} />
+                <AvatarImage
+                  src={mediaUrl(author.avatar.url)}
+                  alt={author.fullName ?? ""}
+                />
               ) : null}
-              <AvatarFallback className="text-xs">{(author.fullName ?? "?").charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xs">
+                {(author.fullName ?? "?").charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="text-sm">
               <Link
@@ -110,17 +123,26 @@ export function ArticleView({
           <div className="flex items-start gap-4">
             <Avatar className="size-14 shrink-0">
               {author.avatar ? (
-                <AvatarImage src={mediaUrl(author.avatar.url)} alt={author.fullName ?? ""} />
+                <AvatarImage
+                  src={mediaUrl(author.avatar.url)}
+                  alt={author.fullName ?? ""}
+                />
               ) : null}
-              <AvatarFallback className="text-lg">{(author.fullName ?? "?").charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-lg">
+                {(author.fullName ?? "?").charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="space-y-1">
               <div className="font-semibold">{author.fullName}</div>
               {author.position ? (
-                <div className="text-sm text-muted-foreground">{author.position}</div>
+                <div className="text-sm text-muted-foreground">
+                  {author.position}
+                </div>
               ) : null}
               {author.note ? (
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{author.note}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {author.note}
+                </p>
               ) : null}
             </div>
           </div>
@@ -137,8 +159,11 @@ export function ArticleView({
                 <Link href={item.url} className="group block">
                   <Card className="transition-shadow group-hover:shadow-md group-hover:ring-1 group-hover:ring-foreground/20">
                     <CardContent className="py-4">
-                      <h3 className="font-semibold group-hover:underline">{item.title}</h3>
-                      {Array.isArray(item.content) && item.content.length > 0 ? (
+                      <h3 className="font-semibold group-hover:underline">
+                        {item.title}
+                      </h3>
+                      {Array.isArray(item.content) &&
+                      item.content.length > 0 ? (
                         <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                           {String(item.content[0])}
                         </p>
@@ -184,5 +209,5 @@ export function ArticleView({
         </nav>
       ) : null}
     </article>
-  );
+  )
 }

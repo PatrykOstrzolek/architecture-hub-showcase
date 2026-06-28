@@ -22,7 +22,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Creates (or updates) three learning path pages and the /learning-paths listing page.
- * Run with: php -d memory_limit=1G bin/console doctrine:fixtures:load --append --group=dev
+ * Run with: php -d memory_limit=1G bin/console doctrine:fixtures:load --append --group=dev.
  */
 class LearningPathFixture extends Fixture implements FixtureGroupInterface, DependentFixtureInterface
 {
@@ -57,20 +57,17 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
     /** @var array<string, string> slug => title */
     private const TITLES = [
         'distributed-systems-fundamentals' => 'Distributed Systems Fundamentals',
-        'domain-driven-design'             => 'Domain-Driven Design',
-        'architecture-patterns'            => 'Architecture Patterns',
+        'domain-driven-design' => 'Domain-Driven Design',
+        'architecture-patterns' => 'Architecture Patterns',
     ];
 
     /** @var array<string, string> slug => description */
     private const DESCRIPTIONS = [
-        'distributed-systems-fundamentals' =>
-            'Master the core concepts behind reliable distributed systems — from consistency guarantees '
+        'distributed-systems-fundamentals' => 'Master the core concepts behind reliable distributed systems — from consistency guarantees '
             . 'and failure handling to messaging patterns that keep services in sync.',
-        'domain-driven-design' =>
-            'Learn to model complex domains with precision. Covers strategic design, aggregates, '
+        'domain-driven-design' => 'Learn to model complex domains with precision. Covers strategic design, aggregates, '
             . 'value objects, CQRS, event sourcing, and the repository pattern.',
-        'architecture-patterns' =>
-            'A tour of the structural patterns that keep large systems maintainable — '
+        'architecture-patterns' => 'A tour of the structural patterns that keep large systems maintainable — '
             . 'from hexagonal architecture and clean code to microservices decomposition.',
     ];
 
@@ -99,22 +96,19 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
             ['/'],
         );
 
-        if (!$homepageUuid) {
+        if (!\is_string($homepageUuid) || '' === $homepageUuid) {
             return;
         }
 
         $lpUuids = [];
         foreach (self::PATHS as $slug => $articleSlugs) {
-            $uuid = $this->upsertLearningPath(
+            $lpUuids[] = $this->upsertLearningPath(
                 $homepageUuid,
                 $slug,
                 self::TITLES[$slug],
                 self::DESCRIPTIONS[$slug],
                 $articleSlugs,
             );
-            if ($uuid !== null) {
-                $lpUuids[] = $uuid;
-            }
         }
 
         $this->upsertListingPage($homepageUuid, $lpUuids);
@@ -122,6 +116,7 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
 
     /**
      * @param list<string> $articleSlugs
+     *
      * @throws DBALException
      */
     private function upsertLearningPath(
@@ -130,7 +125,7 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
         string $title,
         string $description,
         array $articleSlugs,
-    ): ?string {
+    ): string {
         $url = '/learning-paths/' . $slug;
 
         $articleUuids = [];
@@ -139,27 +134,27 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
                 'SELECT resource_id FROM ro_routes WHERE slug = ? AND resource_key = ?',
                 [$articleSlug, 'articles'],
             );
-            if (is_string($uuid)) {
+            if (\is_string($uuid)) {
                 $articleUuids[] = $uuid;
             }
         }
 
         $data = [
-            'locale'      => 'en',
-            'template'    => 'learning-path',
-            'title'       => $title,
-            'url'         => $url,
+            'locale' => 'en',
+            'template' => 'learning-path',
+            'title' => $title,
+            'url' => $url,
             'description' => $description,
-            'articles'    => $articleUuids,
+            'articles' => $articleUuids,
         ];
 
         $existingUuid = $this->connection->fetchOne(
             'SELECT resource_id FROM ro_routes WHERE slug = ?',
             [$url],
         );
-        $existingUuid = is_string($existingUuid) ? $existingUuid : null;
+        $existingUuid = \is_string($existingUuid) ? $existingUuid : null;
 
-        if ($existingUuid !== null) {
+        if (null !== $existingUuid) {
             $this->handle(new Envelope(
                 new ModifyPageMessage(['uuid' => $existingUuid], $data),
                 [new EnableFlushStamp()],
@@ -187,16 +182,17 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
 
     /**
      * @param list<string> $lpUuids
+     *
      * @throws DBALException
      */
     private function upsertListingPage(string $homepageUuid, array $lpUuids): void
     {
         $data = [
-            'locale'             => 'en',
-            'template'           => 'learning-paths',
-            'title'              => 'Learning Paths',
-            'url'                => '/learning-paths',
-            'paths'              => $lpUuids,
+            'locale' => 'en',
+            'template' => 'learning-paths',
+            'title' => 'Learning Paths',
+            'url' => '/learning-paths',
+            'paths' => $lpUuids,
             'navigationContexts' => ['main'],
         ];
 
@@ -204,9 +200,9 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
             'SELECT resource_id FROM ro_routes WHERE slug = ?',
             ['/learning-paths'],
         );
-        $existingUuid = is_string($existingUuid) ? $existingUuid : null;
+        $existingUuid = \is_string($existingUuid) ? $existingUuid : null;
 
-        if ($existingUuid !== null) {
+        if (null !== $existingUuid) {
             $this->handle(new Envelope(
                 new ModifyPageMessage(['uuid' => $existingUuid], $data),
                 [new EnableFlushStamp()],

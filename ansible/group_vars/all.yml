@@ -1,0 +1,5 @@
+domain: "architecture-hub.example.com"
+app_dir: "/opt/architecture-hub"
+app_user: "deploy"
+ghcr_owner: "your-github-username"
+image_tag: "latest"

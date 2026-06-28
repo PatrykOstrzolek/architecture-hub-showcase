@@ -1,0 +1,9 @@
+---
+- name: Provision server
+  hosts: web
+  become: true
+
+  roles:
+    - common
+    - docker
+    - nginx

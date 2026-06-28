@@ -1,0 +1,48 @@
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  apt:
+    name:
+      - curl
+      - git
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+    state: present
+
+- name: Create deploy user
+  user:
+    name: "{{ app_user }}"
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+
+- name: Allow deploy user passwordless sudo
+  copy:
+    content: "{{ app_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ app_user }}"
+    mode: "0440"
+
+- name: Configure UFW — allow SSH
+  ufw:
+    rule: allow
+    port: "22"
+
+- name: Configure UFW — allow HTTP
+  ufw:
+    rule: allow
+    port: "80"
+
+- name: Configure UFW — allow HTTPS
+  ufw:
+    rule: allow
+    port: "443"
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: deny

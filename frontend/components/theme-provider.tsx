@@ -12,7 +12,11 @@ if (process.env.NODE_ENV === "development") {
   const _err = console.error.bind(console)
   // eslint-disable-next-line no-console
   console.error = (...args: Parameters<typeof console.error>) => {
-    if (typeof args[0] === "string" && args[0].includes("Encountered a script tag")) return
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("Encountered a script tag")
+    )
+      return
     _err(...args)
   }
 }

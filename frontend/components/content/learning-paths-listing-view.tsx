@@ -1,19 +1,25 @@
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import type { LearningPathsListingContent } from "./types";
+import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import type { LearningPathsListingContent } from "./types"
 
-export function LearningPathsListingView({ content }: { content: LearningPathsListingContent }) {
+export function LearningPathsListingView({
+  content,
+}: {
+  content: LearningPathsListingContent
+}) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-10 text-3xl font-bold tracking-tight">{content.title}</h1>
+      <h1 className="mb-10 text-3xl font-bold tracking-tight">
+        {content.title}
+      </h1>
 
       {content.paths.length === 0 ? (
         <p className="text-sm text-muted-foreground">No learning paths yet.</p>
       ) : (
         <ul className="space-y-4">
           {content.paths.map((path) => {
-            const count = path.content.articles?.length ?? 0;
+            const count = path.content.articles?.length ?? 0
             return (
               <li key={path.id}>
                 <Link href={path.content.url ?? "#"} className="group block">
@@ -38,10 +44,10 @@ export function LearningPathsListingView({ content }: { content: LearningPathsLi
                   </Card>
                 </Link>
               </li>
-            );
+            )
           })}
         </ul>
       )}
     </div>
-  );
+  )
 }

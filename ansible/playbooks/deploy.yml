@@ -1,0 +1,10 @@
+---
+- name: Deploy application
+  hosts: web
+  become: true
+
+  vars_files:
+    - ../group_vars/vault.yml
+
+  roles:
+    - app

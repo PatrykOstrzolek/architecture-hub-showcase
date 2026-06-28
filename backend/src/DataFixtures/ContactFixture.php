@@ -12,7 +12,7 @@ use Sulu\Bundle\ContactBundle\Entity\Contact;
 /**
  * Creates a second author contact (Jane Kowalski) for use in article fixtures.
  * Adam Ministrator (contact ID 1) is created by sulu:build dev and used directly.
- * Run as part of: php -d memory_limit=1G bin/console doctrine:fixtures:load --group=dev
+ * Run as part of: php -d memory_limit=1G bin/console doctrine:fixtures:load --group=dev.
  */
 class ContactFixture extends Fixture implements FixtureGroupInterface
 {
@@ -25,10 +25,11 @@ class ContactFixture extends Fixture implements FixtureGroupInterface
     {
         $existing = $manager->getRepository(Contact::class)->findOneBy([
             'firstName' => 'Jane',
-            'lastName'  => 'Kowalski',
+            'lastName' => 'Kowalski',
         ]);
-        if ($existing !== null) {
+        if (null !== $existing) {
             $this->addReference('contact-jane', $existing);
+
             return;
         }
 

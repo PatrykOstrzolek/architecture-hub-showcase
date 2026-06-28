@@ -1,11 +1,17 @@
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import type { AuthorsListingContent } from "./types";
+import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
+import type { AuthorsListingContent } from "./types"
 
-export function AuthorsListingView({ content }: { content: AuthorsListingContent }) {
+export function AuthorsListingView({
+  content,
+}: {
+  content: AuthorsListingContent
+}) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-10 text-3xl font-bold tracking-tight">{content.title}</h1>
+      <h1 className="mb-10 text-3xl font-bold tracking-tight">
+        {content.title}
+      </h1>
 
       {content.authors.length === 0 ? (
         <p className="text-sm text-muted-foreground">No authors yet.</p>
@@ -37,5 +43,5 @@ export function AuthorsListingView({ content }: { content: AuthorsListingContent
         </ul>
       )}
     </div>
-  );
+  )
 }

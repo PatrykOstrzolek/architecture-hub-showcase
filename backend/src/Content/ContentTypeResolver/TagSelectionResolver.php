@@ -16,11 +16,13 @@ readonly class TagSelectionResolver implements ContentTypeResolverInterface
         return 'tag_selection';
     }
 
-    public function __construct(private TagRepositoryInterface $tagRepository) {}
+    public function __construct(private TagRepositoryInterface $tagRepository)
+    {
+    }
 
     public function resolve(mixed $data, FieldMetadata $fieldMetadata, string $locale, array $attributes = []): ContentView
     {
-        if (empty($data) || !is_array($data)) {
+        if (empty($data) || !\is_array($data)) {
             return new ContentView([], ['ids' => []]);
         }
 
@@ -34,6 +36,9 @@ readonly class TagSelectionResolver implements ContentTypeResolverInterface
 
         $names = [];
         foreach ($data as $id) {
+            if (!\is_int($id) && !\is_string($id)) {
+                continue;
+            }
             if (isset($byId[$id])) {
                 $names[] = $byId[$id];
             }

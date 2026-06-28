@@ -56,7 +56,7 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
             ['/'],
         );
 
-        if (!$homepageUuid) {
+        if (!\is_string($homepageUuid) || '' === $homepageUuid) {
             // sulu:build dev runs fixtures before the homepage exists — skip silently.
             // Re-run: doctrine:fixtures:load --append --group=dev after the build completes.
             return;
@@ -84,7 +84,7 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
             [$pageUuid, 'live', 'en'],
         );
 
-        if (!is_int($dimContentId) && !is_string($dimContentId)) {
+        if (!\is_int($dimContentId) && !\is_string($dimContentId)) {
             return;
         }
 
@@ -110,11 +110,11 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
         );
 
         $data = [
-            'locale'             => 'en',
-            'template'           => 'authors',
-            'title'              => 'Authors',
-            'url'                => '/authors',
-            'authors'            => $authorUuids,
+            'locale' => 'en',
+            'template' => 'authors',
+            'title' => 'Authors',
+            'url' => '/authors',
+            'authors' => $authorUuids,
             'navigationContexts' => ['main'],
         ];
 
@@ -122,9 +122,9 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
             'SELECT resource_id FROM ro_routes WHERE slug = ?',
             ['/authors'],
         );
-        $existingUuid = is_string($existingUuid) ? $existingUuid : null;
+        $existingUuid = \is_string($existingUuid) ? $existingUuid : null;
 
-        if ($existingUuid !== null) {
+        if (null !== $existingUuid) {
             $this->handle(new Envelope(
                 new ModifyPageMessage(['uuid' => $existingUuid], $data),
                 [new EnableFlushStamp()],
@@ -156,7 +156,7 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
         string $position,
         string $bio,
     ): void {
-        [$firstName, $lastName] = explode(' ', $title, 2);
+        [$firstName, $lastName] = \explode(' ', $title, 2);
 
         $contactId = $this->connection->fetchOne(
             'SELECT id FROM co_contacts WHERE firstname = ? AND lastname = ?',
@@ -171,22 +171,22 @@ class AuthorPageFixture extends Fixture implements FixtureGroupInterface, Depend
             : [];
 
         $data = [
-            'locale'    => 'en',
-            'template'  => 'author',
-            'title'     => $title,
-            'url'       => $url,
-            'position'  => $position,
-            'bio'       => $bio,
-            'articles'  => $articles,
+            'locale' => 'en',
+            'template' => 'author',
+            'title' => $title,
+            'url' => $url,
+            'position' => $position,
+            'bio' => $bio,
+            'articles' => $articles,
         ];
 
         $existingUuid = $this->connection->fetchOne(
             'SELECT resource_id FROM ro_routes WHERE slug = ?',
             [$url],
         );
-        $existingUuid = is_string($existingUuid) ? $existingUuid : null;
+        $existingUuid = \is_string($existingUuid) ? $existingUuid : null;
 
-        if ($existingUuid !== null) {
+        if (null !== $existingUuid) {
             $this->handle(new Envelope(
                 new ModifyPageMessage(['uuid' => $existingUuid], $data),
                 [new EnableFlushStamp()],

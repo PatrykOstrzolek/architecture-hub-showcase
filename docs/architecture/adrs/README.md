@@ -17,3 +17,5 @@ alternatives considered, and the trade-offs accepted.
 | [0002](0002-sulu-cms-as-primary-backend.md) | Sulu CMS as Primary Backend | Proposed |
 | [0003](0003-headless-content-delivery.md) | Headless Content Delivery via the Official SuluHeadlessBundle | Accepted |
 | [0004](0004-content-modeling.md) | Content Modeling for Articles, Authors and Taxonomy | Accepted |
+| [0005](0005-sulu-navigation-api-for-site-header.md) | Use Sulu Navigation API for Site Header | Accepted |
+| [0006](0006-ci-cd-and-ansible-deployment.md) | CI/CD Pipeline with GitHub Actions and Ansible | Accepted |

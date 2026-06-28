@@ -17,12 +17,47 @@ This document defines the spec-driven development workflow to ensure consistency
     *   Run relevant tests.
 4.  **Documentation Update**: If the implementation details evolve during development, update the relevant specification to reflect the final state.
 
-## 3. Pull Request Conventions
+## 3. Testing Strategy
+
+### Backend
+
+Unit tests cover only custom application code — Sulu overrides and extensions. Sulu framework behaviour itself is not tested.
+
+Scope:
+- `TagSelectionResolver` — full unit coverage (order preservation, empty/non-array guard, missing-tag handling)
+- `ArticlesByTaxonomyController` — unit tests for pagination clamping, pages calculation, and empty-taxonomy early return
+- `TaxonomyController` — unit test for the short-query (`< 2 chars`) short-circuit
+
+Run:
+```bash
+php -d memory_limit=1G vendor/bin/phpunit tests/Unit
+```
+
+Static analysis and formatting checks are also part of the quality gate:
+
+```bash
+php -d memory_limit=1G vendor/bin/phpstan analyse
+vendor/bin/php-cs-fixer fix --dry-run --diff
+```
+
+### Frontend
+
+TypeScript compiler, ESLint, Prettier, and `next build` cover the critical path. No additional test runner is required.
+
+Run:
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+npm run build
+```
+
+## 4. Pull Request Conventions
 *   **Context**: Include a reference to the relevant specification document in the PR description.
 *   **Atomic Changes**: Keep PRs small and focused on a single feature or fix.
 *   **Review**: Ensure changes align with the documented principles.
 
-## 4. AI-Assisted Development
+## 5. AI-Assisted Development
 *   **Provide Context**: When starting a task, ensure the AI has access to the relevant specification documents.
 *   **Verify Accuracy**: AI-generated code should be reviewed to ensure it follows project principles and guidelines.
 *   **Consistency**: Always ask the AI to adhere to existing code patterns.
