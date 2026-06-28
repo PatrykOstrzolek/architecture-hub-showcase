@@ -9,11 +9,10 @@ on:
 env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/architecture-hub-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/architecture-hub-frontend
 
 jobs:
   build-and-push:
-    name: Build & push Docker images
+    name: Build & push backend image
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
@@ -53,20 +52,8 @@ jobs:
             ${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ env.BACKEND_IMAGE }}:latest
 
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.version }}
-            ${{ env.FRONTEND_IMAGE }}:latest
-          build-args: |
-            SULU_BASE_URL=http://backend:8080
-
-  deploy:
-    name: Deploy via Ansible
+  deploy-backend:
+    name: Deploy backend via Ansible
     needs: build-and-push
     runs-on: ubuntu-latest
 
@@ -104,3 +91,26 @@ jobs:
           --inventory ansible/inventory/production.ini
           --vault-password-file ~/.vault_pass
         working-directory: ${{ github.workspace }}
+
+  deploy-frontend:
+    name: Deploy frontend to Vercel
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./frontend
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

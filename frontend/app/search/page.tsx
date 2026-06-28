@@ -3,7 +3,17 @@ import Link from "next/link"
 
 import { search, searchByTaxonomy, type SuluSearchHit } from "@/lib/sulu"
 
-export const metadata: Metadata = { title: "Search" }
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string; tag?: string; label?: string }>
+}): Promise<Metadata> {
+  const { q, category, tag, label } = await searchParams
+  if (category) return { title: label ?? category }
+  if (tag) return { title: label ?? tag }
+  if (q?.trim()) return { title: `Results for "${q.trim()}"` }
+  return { title: "Search" }
+}
 
 export default async function SearchPage({
   searchParams,

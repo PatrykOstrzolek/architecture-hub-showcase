@@ -19,3 +19,6 @@ alternatives considered, and the trade-offs accepted.
 | [0004](0004-content-modeling.md) | Content Modeling for Articles, Authors and Taxonomy | Accepted |
 | [0005](0005-sulu-navigation-api-for-site-header.md) | Use Sulu Navigation API for Site Header | Accepted |
 | [0006](0006-ci-cd-and-ansible-deployment.md) | CI/CD Pipeline with GitHub Actions and Ansible | Accepted |
+| [0007](0007-frontend-visual-design.md) | Frontend Visual Design Direction | Accepted |
+| [0008](0008-nextjs-caching-strategy.md) | Next.js Caching Strategy — Time-Based Revalidation | Accepted |
+| [0009](0009-vercel-frontend-deployment.md) | Deploy Next.js Frontend to Vercel | Accepted |

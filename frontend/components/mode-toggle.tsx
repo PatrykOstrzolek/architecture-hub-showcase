@@ -15,7 +15,7 @@ export function ModeToggle() {
   const { setTheme } = useTheme()
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Toggle theme">
           <Sun weight="bold" className="size-4 dark:hidden" />

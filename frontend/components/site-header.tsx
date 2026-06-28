@@ -23,13 +23,13 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
         <Link
           href="/"
-          className="font-heading text-base font-semibold tracking-tight"
+          className="font-mono text-sm font-bold tracking-tight transition-colors hover:text-primary"
         >
-          Architecture<span className="text-primary">Hub</span>
+          arch<span className="text-primary">.</span>hub
         </Link>
 
         <div className="flex items-center gap-2">
@@ -37,12 +37,12 @@ export async function SiteHeader() {
             <SearchForm />
           </Suspense>
 
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded px-2.5 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 {item.label}
               </Link>

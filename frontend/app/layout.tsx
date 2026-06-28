@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Geist, JetBrains_Mono } from "next/font/google"
 
 import "./globals.css"
@@ -5,6 +6,22 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { cn } from "@/lib/utils"
+
+export const metadata: Metadata = {
+  title: {
+    default: "Architecture Hub",
+    template: "%s | Architecture Hub",
+  },
+  description:
+    "A showcase of software architecture patterns, concepts, and best practices.",
+  openGraph: {
+    siteName: "Architecture Hub",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+}
 
 const fontSans = Geist({
   subsets: ["latin"],

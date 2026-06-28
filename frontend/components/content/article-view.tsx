@@ -1,8 +1,6 @@
 import Link from "next/link"
 import { mediaUrl, type SuluSearchHit } from "@/lib/sulu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { BlockRenderer } from "./block-renderer"
 import type { ArticleContent, LearningPathContext } from "./types"
 
@@ -30,114 +28,133 @@ export function ArticleView({
   const date = formatDate(authored)
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
-      {/* Breadcrumb / back navigation */}
-      <div className="mb-8">
+    <article className="mx-auto max-w-3xl px-4 py-10">
+      {/* Breadcrumb */}
+      <div className="mb-10">
         {learningPath ? (
-          <>
+          <div className="space-y-1">
             <Link
               href={`/learning-paths/${learningPath.slug}`}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               ← {learningPath.title}
             </Link>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Article {learningPath.current} of {learningPath.total}
+            <p className="font-mono text-[10px] text-muted-foreground/60">
+              {learningPath.current} of {learningPath.total}
             </p>
-          </>
+          </div>
         ) : (
           <Link
             href="/"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            ← All articles
+            ← all articles
           </Link>
         )}
       </div>
 
       {/* Article header */}
-      <header className="mb-10 space-y-5">
-        <h1 className="text-4xl leading-tight font-bold tracking-tight">
+      <header className="mb-10">
+        {content.categories?.length > 0 && (
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-primary">
+            {content.categories[0].name}
+          </p>
+        )}
+
+        <h1 className="text-4xl font-bold leading-tight tracking-tight">
           {content.title}
         </h1>
 
         {content.summary ? (
-          <p className="text-xl leading-relaxed text-muted-foreground">
+          <p className="mt-4 text-lg leading-7 text-muted-foreground">
             {content.summary}
           </p>
         ) : null}
 
-        {content.categories?.length > 0 || content.tags?.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {content.categories?.map((cat) => (
-              <Badge key={cat.id} variant="default">
-                {cat.name}
-              </Badge>
-            ))}
-            {content.tags?.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        ) : null}
-
-        {author ? (
-          <div className="flex items-center gap-3">
-            <Avatar className="size-9">
-              {author.avatar ? (
-                <AvatarImage
-                  src={mediaUrl(author.avatar.url)}
-                  alt={author.fullName ?? ""}
-                />
-              ) : null}
-              <AvatarFallback className="text-xs">
-                {(author.fullName ?? "?").charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-sm">
+        {/* Meta strip */}
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+          {author ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="size-6 shrink-0">
+                {author.avatar ? (
+                  <AvatarImage
+                    src={mediaUrl(author.avatar.url)}
+                    alt={author.fullName ?? ""}
+                  />
+                ) : null}
+                <AvatarFallback className="text-[10px]">
+                  {(author.fullName ?? "?").charAt(0)}
+                </AvatarFallback>
+              </Avatar>
               <Link
                 href={`/authors/${author.firstName}-${author.lastName}`.toLowerCase()}
-                className="font-medium hover:underline"
+                className="font-mono text-xs font-medium transition-colors hover:text-primary"
               >
                 {author.fullName}
               </Link>
-              <div className="text-muted-foreground">
-                {[author.position, date].filter(Boolean).join(" · ")}
-              </div>
+              {author.position ? (
+                <span className="font-mono text-xs text-muted-foreground">
+                  {author.position}
+                </span>
+              ) : null}
             </div>
-          </div>
-        ) : date ? (
-          <p className="text-sm text-muted-foreground">{date}</p>
-        ) : null}
+          ) : null}
 
-        <div className="border-b" />
+          {date ? (
+            <span className="font-mono text-xs text-muted-foreground">
+              {date}
+            </span>
+          ) : null}
+
+          {content.tags?.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {content.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-8 border-b" />
       </header>
 
       {/* Article body */}
       <BlockRenderer blocks={content.body ?? []} />
 
-      {/* Author bio */}
-      {author ? (
+      {/* Author bio — only when there is actual bio content to show */}
+      {author?.note ? (
         <div className="mt-14 border-t pt-10">
+          <p className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Written by
+          </p>
           <div className="flex items-start gap-4">
-            <Avatar className="size-14 shrink-0">
+            <Avatar className="size-12 shrink-0">
               {author.avatar ? (
                 <AvatarImage
                   src={mediaUrl(author.avatar.url)}
                   alt={author.fullName ?? ""}
                 />
               ) : null}
-              <AvatarFallback className="text-lg">
+              <AvatarFallback className="text-base">
                 {(author.fullName ?? "?").charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-              <div className="font-semibold">{author.fullName}</div>
+              <Link
+                href={`/authors/${author.firstName}-${author.lastName}`.toLowerCase()}
+                className="font-medium transition-colors hover:text-primary"
+              >
+                {author.fullName}
+              </Link>
               {author.position ? (
-                <div className="text-sm text-muted-foreground">
+                <p className="font-mono text-xs text-muted-foreground">
                   {author.position}
-                </div>
+                </p>
               ) : null}
               {author.note ? (
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -152,24 +169,29 @@ export function ArticleView({
       {/* Related articles */}
       {relatedArticles && relatedArticles.length > 0 ? (
         <section className="mt-14 border-t pt-10">
-          <h2 className="mb-6 text-xl font-semibold">Keep reading</h2>
-          <ul className="space-y-4">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Continue reading
+          </p>
+          <ul className="divide-y">
             {relatedArticles.map((item, i) => (
               <li key={item.url ?? i}>
-                <Link href={item.url} className="group block">
-                  <Card className="transition-shadow group-hover:shadow-md group-hover:ring-1 group-hover:ring-foreground/20">
-                    <CardContent className="py-4">
-                      <h3 className="font-semibold group-hover:underline">
-                        {item.title}
-                      </h3>
-                      {Array.isArray(item.content) &&
-                      item.content.length > 0 ? (
-                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                          {String(item.content[0])}
-                        </p>
-                      ) : null}
-                    </CardContent>
-                  </Card>
+                <Link
+                  href={item.url}
+                  className="group flex items-start justify-between gap-6 py-4"
+                >
+                  <div className="min-w-0">
+                    <h3 className="font-medium leading-snug transition-colors group-hover:text-primary">
+                      {item.title}
+                    </h3>
+                    {Array.isArray(item.content) && item.content.length > 0 ? (
+                      <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                        {String(item.content[0])}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="mt-0.5 shrink-0 font-mono text-sm text-muted-foreground transition-colors group-hover:text-primary">
+                    →
+                  </span>
                 </Link>
               </li>
             ))}
@@ -183,23 +205,20 @@ export function ArticleView({
           {learningPath.prev ? (
             <Link
               href={learningPath.prev}
-              className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               ← Previous
             </Link>
           ) : (
             <span />
           )}
-          <Link
-            href={`/learning-paths/${learningPath.slug}`}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <span className="font-mono text-xs text-muted-foreground">
             {learningPath.current} / {learningPath.total}
-          </Link>
+          </span>
           {learningPath.next ? (
             <Link
               href={learningPath.next}
-              className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               Next →
             </Link>

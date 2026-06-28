@@ -279,8 +279,7 @@ export async function searchByTaxonomy(
 ): Promise<SuluSearchHit[]> {
   const params = new URLSearchParams(filter)
   const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
-    `/api/articles?${params}`,
-    0
+    `/api/articles?${params}`
   )
   return data._embedded.hits
 }
@@ -299,5 +298,5 @@ export async function getArticles(page = 1, limit = 6): Promise<ArticlesPage> {
     page: String(page),
     limit: String(limit),
   })
-  return suluFetch<ArticlesPage>(`/api/articles?${params}`, 0)
+  return suluFetch<ArticlesPage>(`/api/articles?${params}`)
 }

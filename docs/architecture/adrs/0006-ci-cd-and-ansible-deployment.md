@@ -1,6 +1,6 @@
 # ADR-0006: CI/CD Pipeline with GitHub Actions and Ansible
 
-- **Status**: Accepted
+- **Status**: Accepted (frontend deployment section superseded by [ADR 0009](0009-vercel-frontend-deployment.md))
 - **Date**: 2026-06-28
 - **Deciders**: Patryk O
 

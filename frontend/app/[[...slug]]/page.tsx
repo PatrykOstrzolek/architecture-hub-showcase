@@ -43,13 +43,17 @@ export async function generateMetadata({
 
   const seo = data.extension?.seo
   const title = seo?.title || (data.content.title as string | undefined)
+  const description = seo?.description || undefined
   return {
     title,
-    description: seo?.description || undefined,
+    description,
+    keywords: seo?.keywords || undefined,
+    alternates: seo?.canonicalUrl ? { canonical: seo.canonicalUrl } : undefined,
     robots:
       seo?.noIndex || seo?.noFollow
         ? { index: !seo.noIndex, follow: !seo.noFollow }
         : undefined,
+    openGraph: { title: title ?? undefined, description },
   }
 }
 
