@@ -2,6 +2,7 @@
 # Only /admin and its static assets are proxied; everything else returns 404.
 server {
     listen 80;
+    listen [::]:80;
     server_name admin.{{ domain }};
 
     client_max_body_size 64M;
@@ -32,6 +33,7 @@ server {
 # HTML rendering is blocked — Next.js on Vercel is the only frontend.
 server {
     listen 80;
+    listen [::]:80;
     server_name api.{{ domain }};
 
     location / {
