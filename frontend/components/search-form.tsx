@@ -86,6 +86,9 @@ export function SearchForm() {
 
   function close() {
     setValue("")
+    setArticles([])
+    setAuthors([])
+    setTaxonomy({ categories: [], tags: [] })
     setOpen(false)
   }
 
