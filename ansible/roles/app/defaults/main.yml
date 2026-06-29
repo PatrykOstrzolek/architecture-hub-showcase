@@ -1,0 +1,6 @@
+app_user: deploy
+app_dir: /opt/architecture-hub
+ghcr_owner: your-github-username
+image_tag: latest
+admin_domain: localhost
+api_domain: localhost

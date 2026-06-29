@@ -1,4 +1,5 @@
 .idea
+ansible/group_vars/all/vault.yml
 # Local dev tooling (Playwright MCP browser driver, not a project artifact)
 tools/
 /.playwright-mcp/
