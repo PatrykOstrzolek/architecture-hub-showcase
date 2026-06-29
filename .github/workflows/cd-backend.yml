@@ -92,8 +92,8 @@ jobs:
 
       - name: Run deploy playbook
         run: >
-          ansible-playbook ansible/playbooks/deploy.yml
-          --inventory ansible/inventory/production.ini
+          ansible-playbook playbooks/deploy.yml
+          --inventory inventory/production.ini
           --vault-password-file ~/.vault_pass
           --extra-vars "image_tag=${{ needs.build-and-push.outputs.image_tag }} ghcr_owner=${{ env.GHCR_OWNER_LC }}"
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/ansible
