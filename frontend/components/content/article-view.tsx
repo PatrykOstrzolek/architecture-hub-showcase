@@ -56,12 +56,12 @@ export function ArticleView({
       {/* Article header */}
       <header className="mb-10">
         {content.categories?.length > 0 && (
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-primary">
+          <p className="mb-3 font-mono text-[10px] tracking-widest text-primary uppercase">
             {content.categories[0].name}
           </p>
         )}
 
-        <h1 className="text-4xl font-bold leading-tight tracking-tight">
+        <h1 className="text-4xl leading-tight font-bold tracking-tight">
           {content.title}
         </h1>
 
@@ -129,7 +129,7 @@ export function ArticleView({
       {/* Author bio — only when there is actual bio content to show */}
       {author?.note ? (
         <div className="mt-14 border-t pt-10">
-          <p className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <p className="mb-5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
             Written by
           </p>
           <div className="flex items-start gap-4">
@@ -169,7 +169,7 @@ export function ArticleView({
       {/* Related articles */}
       {relatedArticles && relatedArticles.length > 0 ? (
         <section className="mt-14 border-t pt-10">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <p className="mb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
             Continue reading
           </p>
           <ul className="divide-y">
@@ -180,7 +180,7 @@ export function ArticleView({
                   className="group flex items-start justify-between gap-6 py-4"
                 >
                   <div className="min-w-0">
-                    <h3 className="font-medium leading-snug transition-colors group-hover:text-primary">
+                    <h3 className="leading-snug font-medium transition-colors group-hover:text-primary">
                       {item.title}
                     </h3>
                     {Array.isArray(item.content) && item.content.length > 0 ? (

@@ -6,7 +6,12 @@ import { search, searchByTaxonomy, type SuluSearchHit } from "@/lib/sulu"
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; tag?: string; label?: string }>
+  searchParams: Promise<{
+    q?: string
+    category?: string
+    tag?: string
+    label?: string
+  }>
 }): Promise<Metadata> {
   const { q, category, tag, label } = await searchParams
   if (category) return { title: label ?? category }
