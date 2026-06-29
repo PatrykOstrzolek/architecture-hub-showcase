@@ -1,4 +1,5 @@
 # Sulu admin — admin.{{ domain }}
+# Only /admin and its static assets are proxied; everything else returns 404.
 server {
     listen 80;
     server_name admin.{{ domain }};
@@ -6,6 +7,11 @@ server {
     client_max_body_size 64M;
 
     location / {
+        return 404;
+    }
+
+    # Admin UI, its JS/CSS bundles, token endpoint, and Symfony assets
+    location ~ ^/(admin|build|bundles|token) {
         proxy_pass         http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header   Host $server_name;
@@ -22,12 +28,18 @@ server {
 }
 
 # Sulu headless API — api.{{ domain }}
-# Consumed by the Next.js frontend running on Vercel (SULU_BASE_URL).
+# Only JSON page responses, REST API routes, and media are proxied.
+# HTML rendering is blocked — Next.js on Vercel is the only frontend.
 server {
     listen 80;
     server_name api.{{ domain }};
 
     location / {
+        return 404;
+    }
+
+    # Headless page content (*.json), REST API, and media uploads
+    location ~ (\.json$|^/(api|media)) {
         proxy_pass         http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header   Host $server_name;
