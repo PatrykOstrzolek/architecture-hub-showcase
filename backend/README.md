@@ -46,6 +46,31 @@ composer create-project sulu/skeleton my-project
 Afterwards, visit the official [Sulu documentation](http://docs.sulu.io/en/latest/book/getting-started.html) to find out **how to initialize and configure your project** to your specific needs.
 
 
+## 🗄️&nbsp; Production: Initial Data Seeding
+
+After the first deploy, seed the production database from a local dump — no fixtures or `sulu:build` needed.
+
+**1. Export local database**
+```bash
+mysqldump -u root -p su_myapp > dump.sql
+```
+
+**2. Copy and import on the server**
+```bash
+scp dump.sql deploy@your-server:/opt/architecture-hub/
+ssh deploy@your-server \
+  "docker exec -i architecture-hub-db-1 psql -U \$DB_USER -d \$DB_DATABASE < /opt/architecture-hub/dump.sql"
+```
+
+**3. Reset the admin password**
+```bash
+ssh deploy@your-server \
+  "docker exec -it architecture-hub-backend-1 php bin/console sulu:security:user:change-password admin"
+```
+
+This is a one-time manual step. Re-deploys via CD do not touch the database.
+
+
 ## ❤️&nbsp; Community and Contributions
 
 The Sulu content management system is a **community-driven open source project** backed by various partner companies. We are committed to a fully transparent development process and **highly appreciate any contributions**. Whether you are helping us fixing bugs, proposing new feature, improving our documentation or spreading the word - **we would love to have you as part of the Sulu community**.
