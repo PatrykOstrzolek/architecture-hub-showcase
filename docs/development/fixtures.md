@@ -2,6 +2,8 @@
 
 How to create Doctrine fixtures that publish content through the Sulu 3.x content pipeline.
 
+> **Production seeding**: production uses a compressed DB dump (`backend/migrations/data/seed.sql.gz`) loaded via the `Version20260629000000` Doctrine migration — not these fixtures. Fixtures are for local development only.
+
 ## Quick start
 
 ```bash

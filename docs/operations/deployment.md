@@ -109,6 +109,13 @@ ansible-playbook ansible/playbooks/provision.yml -i ansible/inventory/production
 
 After provisioning, push to `main` to trigger the first automated deployment.
 
+The seed migration (`Version20260629000000`) runs automatically as part of `doctrine:migrations:migrate` on the first deploy and loads the initial demo content. The admin password is intentionally disabled (`!!`) in the dump — reset it after the first deploy:
+
+```bash
+ssh deploy@your-server \
+  "docker exec -it architecture-hub-backend-1 php bin/console sulu:security:user:change-password admin"
+```
+
 ## 7. Manual Deploy (emergency)
 
 ```bash
@@ -139,7 +146,7 @@ Hooks run on manual commits. CI remains the authoritative gate for all checks.
                               \           /
                            [ Sulu :8000 ]
                                   │
-                           [ MySQL :3306 ]
+                           [ PostgreSQL :5432 ]
 ```
 
 All backend services run as Docker containers managed by `docker-compose.prod.yml`. Nginx is installed directly on the host and proxies to containers bound to `127.0.0.1`.

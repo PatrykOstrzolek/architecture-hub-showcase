@@ -48,7 +48,7 @@ Defined in `docker-compose.prod.yml`, running as Docker containers:
 
 | Service | Image | Internal port | Exposed to host |
 |---|---|---|---|
-| `db` | `mysql:8.0` | 3306 | No |
+| `db` | `postgres:16` | 5432 | No |
 | `backend` | GHCR (built from `backend/Dockerfile.prod`) | 8080 | `127.0.0.1:8000` |
 
 Both ports are bound to `127.0.0.1` — not publicly reachable. All public traffic goes through nginx.
