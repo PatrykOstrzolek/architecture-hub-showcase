@@ -40,6 +40,9 @@ jobs:
       - name: PHP CS Fixer
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
 
+      - name: Create stub .env for tests
+        run: touch .env
+
       - name: PHPUnit
         run: php vendor/bin/phpunit tests/Unit
         env:
