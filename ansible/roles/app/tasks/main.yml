@@ -14,7 +14,7 @@
 
 - name: Deploy docker-compose file
   copy:
-    src: "{{ playbook_dir }}/../docker-compose.prod.yml"
+    src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
     dest: "{{ app_dir }}/docker-compose.yml"
     owner: "{{ app_user }}"
     group: "{{ app_user }}"

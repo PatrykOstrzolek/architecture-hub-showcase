@@ -76,18 +76,18 @@ jobs:
       - name: Write Ansible vault password
         run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
 
+      - name: Write Ansible vault file
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_FILE }}" > ansible/group_vars/all/vault.yml
+
       - name: Override production inventory with actual host
         run: |
           sed -i "s/your-server-ip/${{ secrets.PRODUCTION_HOST }}/g" ansible/inventory/production.ini
-
-      - name: Set image tag variable
-        run: |
-          echo "image_tag=${{ needs.build-and-push.outputs.image_tag }}" \
-            >> ansible/group_vars/all.yml
 
       - name: Run deploy playbook
         run: >
           ansible-playbook ansible/playbooks/deploy.yml
           --inventory ansible/inventory/production.ini
           --vault-password-file ~/.vault_pass
+          --extra-vars "image_tag=${{ needs.build-and-push.outputs.image_tag }} ghcr_owner=${{ github.repository_owner }}"
         working-directory: ${{ github.workspace }}
