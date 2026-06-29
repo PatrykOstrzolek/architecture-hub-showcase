@@ -77,14 +77,17 @@ jobs:
           ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Write Ansible vault password
-        run: printf '%s' "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: printf '%s' "$VAULT_PASSWORD" > ~/.vault_pass
 
       - name: Lowercase owner for GHCR
         run: echo "GHCR_OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Write Ansible vault file
-        run: |
-          echo "${{ secrets.ANSIBLE_VAULT_FILE }}" > ansible/group_vars/all/vault.yml
+        env:
+          VAULT_FILE: ${{ secrets.ANSIBLE_VAULT_FILE }}
+        run: echo "$VAULT_FILE" > ansible/group_vars/all/vault.yml
 
       - name: Override production inventory with actual host
         run: |
