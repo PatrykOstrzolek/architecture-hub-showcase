@@ -77,7 +77,7 @@ jobs:
           ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Write Ansible vault password
-        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
+        run: printf '%s' "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
 
       - name: Lowercase owner for GHCR
         run: echo "GHCR_OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
