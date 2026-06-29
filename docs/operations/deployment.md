@@ -2,65 +2,94 @@
 
 ## 1. Overview
 
-Deployments are fully automated through a two-stage GitHub Actions pipeline:
+Deployments are fully automated through independent per-target GitHub Actions pipelines:
 
-- **CI** (`.github/workflows/ci.yml`) — quality gate on every push and pull request
-- **CD** (`.github/workflows/cd.yml`) — triggered automatically after CI passes on `main`
+| Pipeline | Trigger | Deploys to |
+|---|---|---|
+| `ci-backend.yml` → `cd-backend.yml` | push / PR on `main` | VPS via Ansible |
+| `ci-frontend.yml` → `cd-frontend.yml` | push / PR on `main` | Vercel |
+| `ci-security.yml` | push / PR on `main` | — (gate only) |
+
+Frontend and backend pipelines are fully independent. A failing backend build never blocks a frontend deployment, and vice versa.
 
 No manual steps are required for a normal release. Push to `main` is the only trigger.
 
-## 2. CI Pipeline
+## 2. CI Pipelines
 
-Runs in parallel across three jobs:
+### Backend (`ci-backend.yml`)
 
-| Job | Steps |
+| Step | Tool |
 |---|---|
-| **Backend** | `composer install` → PHPStan → PHP CS Fixer (dry-run) → PHPUnit → `composer audit` |
-| **Frontend** | `npm ci` → typecheck → lint → format:check → `next build` → `npm audit --audit-level=high` |
-| **Security scan** | Trivy filesystem scan (HIGH/CRITICAL CVEs + secrets) → Semgrep (OWASP Top 10 / PHP / TypeScript rulesets) |
+| Install dependencies | `composer install --no-scripts` |
+| Static analysis | PHPStan |
+| Code style | PHP CS Fixer (dry-run) |
+| Unit tests | PHPUnit |
+| Dependency audit | `composer audit` |
 
-PHP memory limit is set globally via `ini-values: memory_limit=1G` in the `shivammathur/setup-php` action — no per-command `-d` flags needed.
+PHP memory limit is set globally via `ini-values: memory_limit=1G` in the `shivammathur/setup-php` action.
+
+### Frontend (`ci-frontend.yml`)
+
+| Step | Tool |
+|---|---|
+| Install dependencies | `npm ci` |
+| Type check | `tsc --noEmit` |
+| Lint | ESLint |
+| Format check | Prettier |
+| Build | `next build` |
+| Dependency audit | `npm audit --audit-level=high` |
 
 `npm audit` runs at `--audit-level=high` — the known moderate-severity PostCSS transitive dependency inside Next.js is accepted risk (see [ADR 0010](../architecture/adrs/0010-security-hardening.md)).
 
-Trivy skips `backend/var`, `backend/vendor`, `frontend/node_modules`, and `.next` to avoid noise from build artefacts and vendored code.
+`SULU_BASE_URL` is set to `http://localhost:8000` at build time in CI — a placeholder that allows the build to succeed. The real URL is configured in the Vercel environment.
 
-## 3. CD Pipeline
+### Security (`ci-security.yml`)
 
-Triggers via `workflow_run` after CI completes successfully on `main`.
+Runs on every push and pull request, independent of the other pipelines:
 
-### Job 1 — Build & push Docker images
+| Step | Tool |
+|---|---|
+| Filesystem CVE scan | Trivy (HIGH/CRITICAL, unfixed only) |
+| SAST | Semgrep (OWASP Top 10, PHP, TypeScript rulesets) |
 
-Builds both production images and pushes to GitHub Container Registry (GHCR):
+Trivy skips `backend/var`, `backend/vendor`, `frontend/node_modules`, and `.next`.
 
-| Image | Source | Tag |
-|---|---|---|
-| `ghcr.io/<owner>/architecture-hub-backend` | `backend/Dockerfile.prod` | `<git-sha>` + `latest` |
-| `ghcr.io/<owner>/architecture-hub-frontend` | `frontend/Dockerfile` | `<git-sha>` + `latest` |
+## 3. CD Pipelines
 
-Authentication uses the built-in `GITHUB_TOKEN` — no additional credentials needed for GHCR.
+Each CD workflow triggers via `workflow_run` after its corresponding CI workflow completes successfully on `main`.
 
-### Job 2 — Deploy via Ansible
+### Backend (`cd-backend.yml`)
 
-Runs after images are pushed. Installs Ansible on the runner, then executes `ansible/playbooks/deploy.yml` against the production inventory:
+1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
+2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory; Ansible pulls the new image, templates `.env`, restarts containers, runs cache warmup
 
-1. Logs in to GHCR on the server
-2. Templates `.env` from vault variables
-3. Pulls the new images
-4. Restarts containers (`docker compose up -d --remove-orphans`)
-5. Runs Symfony cache warmup inside the backend container
+### Frontend (`cd-frontend.yml`)
+
+1. Installs Vercel CLI
+2. Runs `vercel deploy --prod` from the `frontend/` directory
 
 ## 4. Required GitHub Secrets
 
 Add these in **Settings → Secrets and variables → Actions**:
 
-| Secret | Description |
-|---|---|
-| `SSH_PRIVATE_KEY` | Private key whose public key is authorized on the production server |
-| `PRODUCTION_HOST` | VPS IP address or hostname |
-| `ANSIBLE_VAULT_PASSWORD` | Password used to encrypt `ansible/group_vars/vault.yml` |
+| Secret | Used by | Description |
+|---|---|---|
+| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS |
+| `PRODUCTION_HOST` | `cd-backend` | VPS IP address or hostname |
+| `ANSIBLE_VAULT_PASSWORD` | `cd-backend` | Password for `ansible/group_vars/vault.yml` |
+| `VERCEL_TOKEN` | `cd-frontend` | Personal access token from Vercel Account Settings → Tokens |
+| `VERCEL_ORG_ID` | `cd-frontend` | `team_gWZc553cRPxf1ZKpFg2yRxNq` (archhub team) |
+| `VERCEL_PROJECT_ID` | `cd-frontend` | `prj_yZr1N3ce8L5Z96CfOyJjP1om1bGw` (arch-hub project) |
 
-## 5. One-Time Server Provisioning
+## 5. Vercel Environment Variables
+
+Set in the Vercel dashboard under **Project → Settings → Environment Variables**:
+
+| Variable | Environment | Value |
+|---|---|---|
+| `SULU_BASE_URL` | Production | `https://api.yourdomain.com` |
+
+## 6. One-Time Server Provisioning
 
 Run once on a fresh VPS before the first deployment:
 
@@ -80,9 +109,7 @@ ansible-playbook ansible/playbooks/provision.yml -i ansible/inventory/production
 
 After provisioning, push to `main` to trigger the first automated deployment.
 
-## 6. Manual Deploy (emergency)
-
-To deploy outside of GitHub Actions:
+## 7. Manual Deploy (emergency)
 
 ```bash
 ansible-playbook ansible/playbooks/deploy.yml \
@@ -90,18 +117,29 @@ ansible-playbook ansible/playbooks/deploy.yml \
   --vault-password-file ~/.vault_pass
 ```
 
-## 7. Deployment Topology
+## 8. Pre-commit Hooks
+
+The frontend uses `husky` + `lint-staged` to enforce formatting and linting before every commit:
+
+```
+*.{ts,tsx} → prettier --write → eslint --fix
+```
+
+Hooks run on manual commits. CI remains the authoritative gate for all checks.
+
+## 9. Deployment Topology
 
 ```
                 Internet
                    │
-              [ nginx ]
-             /         \
-    yourdomain.com   admin.yourdomain.com
-         │                   │
-   [ Next.js :3000 ]   [ Sulu :8000 ]
-                \           /
-              [ MySQL :3306 ]
+         ┌─────────┴──────────┐
+    [ Vercel ]           [ nginx / VPS ]
+   Next.js frontend       /           \
+  arch-hub.vercel.app  admin.domain   api.domain
+                              \           /
+                           [ Sulu :8000 ]
+                                  │
+                           [ MySQL :3306 ]
 ```
 
-All services run as Docker containers managed by `docker-compose.prod.yml`. Nginx is installed directly on the host and proxies to containers bound to `127.0.0.1` (not exposed publicly).
+All backend services run as Docker containers managed by `docker-compose.prod.yml`. Nginx is installed directly on the host and proxies to containers bound to `127.0.0.1`.
