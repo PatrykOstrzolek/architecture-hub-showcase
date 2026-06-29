@@ -6,7 +6,6 @@ namespace DoctrineMigrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
-use RuntimeException;
 
 final class Version20260629000000 extends AbstractMigration
 {
@@ -17,13 +16,13 @@ final class Version20260629000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $compressed = file_get_contents(__DIR__ . '/data/seed.sql.gz');
+        $compressed = \file_get_contents(__DIR__ . '/data/seed.sql.gz');
         if (false === $compressed) {
-            throw new RuntimeException('Cannot read migrations/data/seed.sql.gz');
+            throw new \RuntimeException('Cannot read migrations/data/seed.sql.gz');
         }
-        $sql = gzdecode($compressed);
+        $sql = \gzdecode($compressed);
         if (false === $sql) {
-            throw new RuntimeException('Failed to decompress seed.sql.gz');
+            throw new \RuntimeException('Failed to decompress seed.sql.gz');
         }
 
         $this->addSql($sql);
