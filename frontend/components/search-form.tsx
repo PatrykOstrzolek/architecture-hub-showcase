@@ -26,13 +26,7 @@ export function SearchForm() {
 
   useEffect(() => {
     const trimmed = value.trim()
-    if (trimmed.length < MIN_CHARS) {
-      setArticles([])
-      setAuthors([])
-      setTaxonomy({ categories: [], tags: [] })
-      setOpen(false)
-      return
-    }
+    if (trimmed.length < MIN_CHARS) return
 
     const timer = setTimeout(async () => {
       const q = encodeURIComponent(trimmed)
@@ -117,7 +111,16 @@ export function SearchForm() {
           type="search"
           placeholder="Search…"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value
+            setValue(next)
+            if (next.trim().length < MIN_CHARS) {
+              setArticles([])
+              setAuthors([])
+              setTaxonomy({ categories: [], tags: [] })
+              setOpen(false)
+            }
+          }}
           onFocus={() => hasResults && setOpen(true)}
           className="h-8 w-44 text-sm"
           aria-label="Search"
