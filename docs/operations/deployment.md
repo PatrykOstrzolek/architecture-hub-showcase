@@ -11,14 +11,19 @@ No manual steps are required for a normal release. Push to `main` is the only tr
 
 ## 2. CI Pipeline
 
-Runs in parallel across two jobs:
+Runs in parallel across three jobs:
 
 | Job | Steps |
 |---|---|
-| **Backend** | `composer install` → PHPStan → PHP CS Fixer (dry-run) → PHPUnit |
-| **Frontend** | `npm ci` → typecheck → lint → format:check → `next build` |
+| **Backend** | `composer install` → PHPStan → PHP CS Fixer (dry-run) → PHPUnit → `composer audit` |
+| **Frontend** | `npm ci` → typecheck → lint → format:check → `next build` → `npm audit --audit-level=high` |
+| **Security scan** | Trivy filesystem scan (HIGH/CRITICAL CVEs + secrets) → Semgrep (OWASP Top 10 / PHP / TypeScript rulesets) |
 
 PHP memory limit is set globally via `ini-values: memory_limit=1G` in the `shivammathur/setup-php` action — no per-command `-d` flags needed.
+
+`npm audit` runs at `--audit-level=high` — the known moderate-severity PostCSS transitive dependency inside Next.js is accepted risk (see [ADR 0010](../architecture/adrs/0010-security-hardening.md)).
+
+Trivy skips `backend/var`, `backend/vendor`, `frontend/node_modules`, and `.next` to avoid noise from build artefacts and vendored code.
 
 ## 3. CD Pipeline
 

@@ -22,3 +22,4 @@ alternatives considered, and the trade-offs accepted.
 | [0007](0007-frontend-visual-design.md) | Frontend Visual Design Direction | Accepted |
 | [0008](0008-nextjs-caching-strategy.md) | Next.js Caching Strategy — Time-Based Revalidation | Accepted |
 | [0009](0009-vercel-frontend-deployment.md) | Deploy Next.js Frontend to Vercel | Accepted |
+| [0010](0010-security-hardening.md) | Security Hardening | Accepted |

@@ -1,4 +1,5 @@
 import { mediaUrl } from "@/lib/sulu"
+import { sanitize } from "@/lib/sanitize"
 import { cn } from "@/lib/utils"
 import type { ArticleBlock } from "./types"
 
@@ -32,7 +33,7 @@ function Block({ block }: { block: ArticleBlock }) {
       return (
         <div
           className={richText}
-          dangerouslySetInnerHTML={{ __html: block.text }}
+          dangerouslySetInnerHTML={{ __html: sanitize(block.text) }}
         />
       )
 
@@ -94,7 +95,7 @@ function Block({ block }: { block: ArticleBlock }) {
         >
           <div
             className={richText}
-            dangerouslySetInnerHTML={{ __html: block.content }}
+            dangerouslySetInnerHTML={{ __html: sanitize(block.content) }}
           />
         </aside>
       )

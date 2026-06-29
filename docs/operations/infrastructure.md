@@ -107,7 +107,36 @@ Before the first deployment:
 The `VERCEL_TOKEN` is a personal access token from the Vercel dashboard (Account Settings → Tokens).
 `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are found in `frontend/.vercel/project.json` after linking.
 
-## 6. Key Constraints
+## 6. Security
+
+### Secrets
+
+`backend/.env` is **not committed** to version control (`.gitignore` blocks it). The file is templated at deploy time by Ansible from `ansible/group_vars/vault.yml` (Ansible Vault encrypted). Never commit real secrets to `backend/.env` — use `.env.example` for documentation.
+
+### HTTP Security Headers
+
+**Next.js frontend** — headers are set globally in `frontend/next.config.ts` via the `headers()` function:
+
+| Header | Value |
+|---|---|
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Content-Security-Policy` | baseline (see [ADR 0010](../adrs/0010-security-hardening.md)) |
+
+**nginx backend** — headers are injected in `ansible/roles/nginx/templates/app.conf.j2`. The API vhost adds a strict `Content-Security-Policy: default-src 'none'`; the admin vhost uses `X-Frame-Options: SAMEORIGIN` to allow the Sulu admin iframe.
+
+### Symfony Profiler
+
+The Symfony profiler (`/_profiler`, `/_wdt`) is **disabled in production** via `when@prod` in `backend/config/packages/framework.yaml`. It remains enabled in the `dev` environment. Do not remove this block — the profiler exposes full request payloads, SQL queries, and logs to anyone with the URL.
+
+### CMS HTML Sanitization
+
+Rich-text HTML from Sulu is sanitized with `sanitize-html` before rendering via `dangerouslySetInnerHTML`. The allowlist and configuration live in `frontend/lib/sanitize.ts`. See [ADR 0010](../adrs/0010-security-hardening.md).
+
+## 7. Key Constraints
 
 - **PHP memory**: 1 G required for composer install, PHPStan, and cache warmup. Set via `ini-values` in CI, via `-d` flag locally.
 - **Headless architecture**: Vercel calls Sulu over the public internet via `api.yourdomain.com`. The admin subdomain is separate and carries the Sulu admin UI.

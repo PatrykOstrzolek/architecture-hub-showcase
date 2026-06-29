@@ -1,3 +1,4 @@
+import { sanitize } from "@/lib/sanitize"
 import type { PageContent } from "./types"
 
 export function PageView({ content }: { content: PageContent }) {
@@ -9,7 +10,7 @@ export function PageView({ content }: { content: PageContent }) {
       {content.article ? (
         <div
           className="leading-7 [&_a]:underline [&_p]:mb-4"
-          dangerouslySetInnerHTML={{ __html: content.article }}
+          dangerouslySetInnerHTML={{ __html: sanitize(content.article) }}
         />
       ) : null}
     </div>
