@@ -95,17 +95,20 @@ Run once on a fresh VPS before the first deployment:
 
 ```bash
 # 1. Fill in real values and encrypt secrets
-cp ansible/group_vars/vault.yml.example ansible/group_vars/vault.yml
-# edit vault.yml with real passwords, then:
-ansible-vault encrypt ansible/group_vars/vault.yml
+cp ansible/group_vars/all/vault.yml.example ansible/group_vars/all/vault.yml
+# edit vault.yml with real passwords/tokens, then:
+ansible-vault encrypt ansible/group_vars/all/vault.yml
 
-# 2. Update ansible/group_vars/all.yml with your real domain and GitHub username
+# 2. Update ansible/group_vars/all/main.yml with your domain names and GitHub username
 
-# 3. Update ansible/inventory/production.ini with your VPS IP
+# 3. Update ansible/inventory/production.ini with your VPS hostname and SSH port
 
-# 4. Provision the server (installs Docker, nginx, UFW, fail2ban)
-ansible-playbook ansible/playbooks/provision.yml -i ansible/inventory/production.ini
+# 4. Provision the server — run from ansible/ directory, connect as root initially
+cd ansible
+ansible-playbook playbooks/provision.yml -i inventory/production.ini -e "ansible_user=root" --ask-vault-pass
 ```
+
+> **Mikrus note:** SSH port is 10130 (Mikrus NAT forwards to internal port 22). Nginx listens on `[::]:80` (IPv6 only — no dedicated IPv4). See `docs/operations/mikrus-server.md` (gitignored) for full server details.
 
 After provisioning, push to `main` to trigger the first automated deployment.
 

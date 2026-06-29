@@ -32,14 +32,19 @@ fetches content from the Sulu headless API over the public internet via
 
 `SULU_BASE_URL` must point to `https://api.yourdomain.com` (see nginx below).
 
-### Backend — VPS
+### Backend — VPS (Mikrus)
 
-Bare VPS running Ubuntu. Provisioned once via Ansible (`ansible/playbooks/provision.yml`).
+[Mikrus](https://mikr.us) VPS running Ubuntu, plan 2.1 (1 GB RAM, 10 GB NVMe, Finland).
+Provisioned once via Ansible (`ansible/playbooks/provision.yml`).
+
+**Networking:** Mikrus provides no dedicated IPv4. Web traffic reaches the server via IPv6.
+Mikrus subdomains (`patrykarc.tojest.dev`, `patrykapi.tojest.dev`) proxy HTTPS → nginx on port 80.
+SSH uses port-forwarding: external port 10130 → internal port 22.
 
 Installed by the `common` and `docker` Ansible roles:
 - Docker CE + Compose plugin
-- nginx (host-level reverse proxy)
-- UFW firewall (allow 22/80/443 only)
+- nginx (host-level reverse proxy, listens on `[::]:80`)
+- UFW firewall (allows ports 22/80/443)
 - fail2ban
 
 ### Application services
