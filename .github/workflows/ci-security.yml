@@ -1,0 +1,36 @@
+name: CI — Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Trivy — filesystem scan
+        run: |
+          trivy fs . \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --skip-dirs backend/var,backend/vendor,frontend/node_modules,.next \
+            --quiet
+
+      - name: Semgrep
+        run: |
+          pip install semgrep --quiet
+          semgrep scan \
+            --config p/owasp-top-ten \
+            --config p/php \
+            --config p/typescript \
+            --error \
+            --quiet
