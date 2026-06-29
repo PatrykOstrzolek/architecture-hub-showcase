@@ -31,11 +31,8 @@ jobs:
           key: composer-${{ hashFiles('backend/composer.lock') }}
           restore-keys: composer-
 
-      - name: Create .env for CI
-        run: cp .env.test .env
-
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
       - name: PHPStan
         run: php vendor/bin/phpstan analyse --configuration=phpstan.ci.neon --no-progress
