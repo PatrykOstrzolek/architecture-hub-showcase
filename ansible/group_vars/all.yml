@@ -1,5 +1,5 @@
-domain: "architecture-hub.example.com"
-api_domain: "api.architecture-hub.example.com"
+admin_domain: "patrykarc.tojest.dev"
+api_domain: "patrykapi.tojest.dev"
 app_dir: "/opt/architecture-hub"
 app_user: "deploy"
 ghcr_owner: "your-github-username"
