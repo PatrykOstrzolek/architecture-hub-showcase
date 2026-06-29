@@ -132,6 +132,17 @@ The `VERCEL_TOKEN` is a personal access token from the Vercel dashboard (Account
 
 The Symfony profiler (`/_profiler`, `/_wdt`) is **disabled in production** via `when@prod` in `backend/config/packages/framework.yaml`. It remains enabled in the `dev` environment. Do not remove this block — the profiler exposes full request payloads, SQL queries, and logs to anyone with the URL.
 
+### Sulu HTML Frontend — Must Remain Unreachable
+
+Sulu's `HeadlessWebsiteController` serves HTML at the plain URL of every page (no `.json` suffix). This HTML rendering path is an internal Sulu detail and is **not part of the public API** — Next.js on Vercel is the only frontend.
+
+Both nginx vhosts enforce this:
+
+- **`admin.`** — proxies only `/admin`, `/build`, `/bundles`, `/token`. Everything else returns 404.
+- **`api.`** — proxies only `*.json` requests, `/api/*`, and `/media/*`. Everything else returns 404.
+
+**Do not remove these restrictions.** If the `location /` catch-all is changed to proxy to the backend, the Sulu HTML frontend becomes publicly accessible on those subdomains, contradicting the headless architecture decision ([ADR-0003](../architecture/adrs/0003-headless-content-delivery.md)).
+
 ### CMS HTML Sanitization
 
 Rich-text HTML from Sulu is sanitized with `sanitize-html` before rendering via `dangerouslySetInnerHTML`. The allowlist and configuration live in `frontend/lib/sanitize.ts`. See [ADR 0010](../adrs/0010-security-hardening.md).

@@ -117,6 +117,11 @@ as SEAL search results so the frontend uses one consistent model.
 *   The JSON shape is defined by the bundle's resolvers. Bespoke payload needs are addressed by
     adding/overriding a `ContentTypeResolver` (the supported extension point), not by forking.
 *   Listing/filter ergonomics depend on SmartContent and/or the search index being configured.
+*   `HeadlessWebsiteController` still responds with HTML at the plain URL (no `.json` suffix).
+    This rendering path must remain **unreachable from the public internet** — enforced by nginx
+    (see [infrastructure.md §6](../../operations/infrastructure.md)). If the nginx restriction is
+    ever removed, the Sulu HTML frontend becomes publicly accessible, contradicting the headless
+    contract.
 
 ## Alternatives Considered
 
