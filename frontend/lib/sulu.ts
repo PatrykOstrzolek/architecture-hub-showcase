@@ -204,15 +204,21 @@ export interface SuluTaxonomySuggestions {
 // --- Fetch helpers --------------------------------------------------------
 
 class SuluNotFoundError extends Error {}
+class SuluUnavailableError extends Error {}
 
 async function suluFetch<T>(
   path: string,
   revalidate = REVALIDATE_SECONDS
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { Accept: "application/json" },
-    next: { revalidate },
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate },
+    })
+  } catch {
+    throw new SuluUnavailableError(`Sulu backend unreachable: ${BASE_URL}`)
+  }
 
   if (res.status === 404) {
     throw new SuluNotFoundError(`Sulu content not found: ${path}`)
@@ -237,6 +243,7 @@ export async function getContent<TContent = Record<string, unknown>>(
     return await suluFetch<SuluContent<TContent>>(`${path}.json`)
   } catch (err) {
     if (err instanceof SuluNotFoundError) return null
+    if (err instanceof SuluUnavailableError) return null
     throw err
   }
 }
@@ -250,10 +257,15 @@ export async function getNavigation(
     depth: String(depth),
     flat: String(flat),
   })
-  const data = await suluFetch<{ _embedded: { items: SuluNavigationItem[] } }>(
-    `/api/navigations/${context}?${params}`
-  )
-  return data._embedded.items
+  try {
+    const data = await suluFetch<{
+      _embedded: { items: SuluNavigationItem[] }
+    }>(`/api/navigations/${context}?${params}`)
+    return data._embedded.items
+  } catch (err) {
+    if (err instanceof SuluUnavailableError) return []
+    throw err
+  }
 }
 
 /** Full-text search across the website index. */
@@ -292,11 +304,24 @@ export interface ArticlesPage {
   pages: number
 }
 
+const EMPTY_ARTICLES: ArticlesPage = {
+  _embedded: { hits: [] },
+  total: 0,
+  page: 1,
+  limit: 6,
+  pages: 0,
+}
+
 /** Paginated article listing (newest first). */
 export async function getArticles(page = 1, limit = 6): Promise<ArticlesPage> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   })
-  return suluFetch<ArticlesPage>(`/api/articles?${params}`)
+  try {
+    return await suluFetch<ArticlesPage>(`/api/articles?${params}`)
+  } catch (err) {
+    if (err instanceof SuluUnavailableError) return EMPTY_ARTICLES
+    throw err
+  }
 }
