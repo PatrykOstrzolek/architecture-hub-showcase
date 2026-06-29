@@ -74,7 +74,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Write Ansible vault password
         run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
