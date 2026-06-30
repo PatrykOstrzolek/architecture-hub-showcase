@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sulu\Bundle\SecurityBundle\Entity\User;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -36,7 +37,7 @@ class SetUserPasswordCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $username = $input->getArgument('username');
+        $username = (string) $input->getArgument('username');
 
         /** @var User|null $user */
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
@@ -47,6 +48,7 @@ class SetUserPasswordCommand extends Command
             return Command::FAILURE;
         }
 
+        /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
 
         $question = new Question('New password: ');
@@ -60,6 +62,8 @@ class SetUserPasswordCommand extends Command
 
             return Command::FAILURE;
         }
+
+        \assert(\is_string($password));
 
         $confirm = new Question('Confirm password: ');
         $confirm->setHidden(true);
