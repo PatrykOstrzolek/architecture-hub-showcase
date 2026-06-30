@@ -1,1 +1,18 @@
+#!/usr/bin/env sh
+
+# Frontend — prettier + eslint on staged TS/TSX files
 npx lint-staged
+
+# Backend — CS Fixer + PHPStan if any PHP files are staged
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.php$' || true)
+if [ -n "$STAGED_PHP" ]; then
+  echo "PHP files staged — running CS Fixer and PHPStan..."
+
+  # Auto-fix code style on staged files and re-stage them
+  (cd backend && echo "$STAGED_PHP" | sed 's|^backend/||' | xargs vendor/bin/php-cs-fixer fix)
+  echo "$STAGED_PHP" | xargs git add
+
+  # Full project type-check (result cache makes this fast after the first run)
+  (cd backend && php -d memory_limit=1G vendor/bin/phpstan analyse \
+    --configuration=phpstan.ci.neon --no-progress)
+fi

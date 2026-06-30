@@ -169,11 +169,15 @@ ansible-playbook ansible/playbooks/deploy.yml \
 
 ## 9. Pre-commit Hooks
 
-The frontend uses `husky` + `lint-staged` to enforce formatting and linting before every commit:
+`husky` runs two sets of checks before every commit (`frontend/.husky/pre-commit`):
 
 ```
-*.{ts,tsx} → prettier --write → eslint --fix
+*.{ts,tsx}        → prettier --write → eslint --fix   (lint-staged, frontend only)
+backend/**/*.php  → php-cs-fixer fix  (auto-fixed and re-staged)
+                  → phpstan analyse   (full project, result cache keeps it fast)
 ```
+
+PHP checks only run when PHP files are staged — pure frontend commits are unaffected.
 
 Hooks run on manual commits. CI remains the authoritative gate for all checks.
 
