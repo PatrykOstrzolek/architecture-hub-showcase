@@ -28,16 +28,12 @@
     group: "{{ app_user }}"
     mode: "0600"
 
-- name: Pull latest images
+- name: Deploy and recreate services with latest image
   community.docker.docker_compose_v2:
     project_src: "{{ app_dir }}"
     pull: always
+    recreate: always
     state: present
-
-- name: Restart services
-  community.docker.docker_compose_v2:
-    project_src: "{{ app_dir }}"
-    state: restarted
     remove_orphans: true
 
 - name: Run Symfony cache warmup
