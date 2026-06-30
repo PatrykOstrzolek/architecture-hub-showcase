@@ -37,7 +37,13 @@ class SetUserPasswordCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $username = (string) $input->getArgument('username');
+        $username = $input->getArgument('username');
+
+        if (!is_string($username)) {
+            $io->error('Username must be a string.');
+
+            return Command::FAILURE;
+        }
 
         /** @var User|null $user */
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
@@ -63,7 +69,7 @@ class SetUserPasswordCommand extends Command
             return Command::FAILURE;
         }
 
-        \assert(\is_string($password));
+        assert(is_string($password));
 
         $confirm = new Question('Confirm password: ');
         $confirm->setHidden(true);
