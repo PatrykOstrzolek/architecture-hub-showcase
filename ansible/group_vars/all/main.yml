@@ -1,5 +1,6 @@
 admin_domain: "patrykarc.tojest.dev"
 api_domain: "patrykapi.tojest.dev"
+next_revalidate_url: ""
 app_dir: "/opt/architecture-hub"
 app_user: "deploy"
 ghcr_owner: "patrykostrzolek"
