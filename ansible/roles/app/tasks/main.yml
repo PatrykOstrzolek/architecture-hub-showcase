@@ -28,6 +28,12 @@
     group: "{{ app_user }}"
     mode: "0600"
 
+- name: Prune unused Docker images to free disk space
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
+
 - name: Deploy and recreate services with latest image
   community.docker.docker_compose_v2:
     project_src: "{{ app_dir }}"
