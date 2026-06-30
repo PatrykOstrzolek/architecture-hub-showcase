@@ -7,6 +7,12 @@ server {
 
     client_max_body_size 64M;
 
+    # Prevent //admin from bypassing the location regex below.
+    # With merge_slashes on (default), nginx normalises //admin → /admin for
+    # routing but forwards the original URI to the proxy, so PHP sees //admin
+    # and misses the ^\/admin check → website context instead of admin kernel.
+    merge_slashes off;
+
     location / {
         return 404;
     }

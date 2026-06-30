@@ -61,7 +61,7 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
 ### Backend (`cd-backend.yml`)
 
 1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
-2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory; Ansible pulls the new image, templates `.env`, restarts containers, runs cache warmup
+2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory; Ansible pulls the new image, templates `.env`, restarts containers
 
 ### Frontend (`cd-frontend.yml`)
 
@@ -83,11 +83,11 @@ Add these in **Settings → Secrets and variables → Actions**:
 
 ## 5. Vercel Environment Variables
 
-Set in the Vercel dashboard under **Project → Settings → Environment Variables**:
+Set via `vercel env add` or the Vercel dashboard under **Project → Settings → Environment Variables**:
 
 | Variable | Environment | Value |
 |---|---|---|
-| `SULU_BASE_URL` | Production | `https://api.yourdomain.com` |
+| `SULU_BASE_URL` | Production | `https://patrykapi.tojest.dev` |
 
 ## 6. One-Time Server Provisioning
 
@@ -103,7 +103,7 @@ ansible-vault encrypt ansible/group_vars/all/vault.yml
 
 # 3. Update ansible/inventory/production.ini with your VPS hostname and SSH port
 
-# 4. Provision the server — run from ansible/ directory, connect as root initially
+# 4. Provision the server (installs Docker, nginx, renders the nginx vhost with correct server_names)
 cd ansible
 ansible-playbook playbooks/provision.yml -i inventory/production.ini -e "ansible_user=root" --ask-vault-pass
 ```
@@ -112,14 +112,55 @@ ansible-playbook playbooks/provision.yml -i inventory/production.ini -e "ansible
 
 After provisioning, push to `main` to trigger the first automated deployment.
 
-The seed migration (`Version20260629000000`) runs automatically as part of `doctrine:migrations:migrate` on the first deploy and loads the initial demo content. The admin password is intentionally disabled (`!!`) in the dump — reset it after the first deploy:
+## 7. First-Deploy Database Initialisation
+
+The automated deploy pipeline does **not** initialise the database. Run these once after the first container is up:
 
 ```bash
-ssh deploy@your-server \
-  "docker exec -it architecture-hub-backend-1 php bin/console sulu:security:user:change-password admin"
+SERVER="ssh -p 10130 deploy@paul130.mikrus.xyz"
+CONTAINER="architecture-hub-backend-1"
+
+# 1. Create the Sulu schema (all tables)
+$SERVER "docker exec $CONTAINER php bin/console doctrine:schema:create --no-interaction"
+
+# 2. Initialise the Doctrine Migrations tracking table
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:sync-metadata-storage --no-interaction"
+
+# 3. Mark Sulu's internal data-migration versions as done
+#    (they convert legacy tag-name data; irrelevant on a fresh install)
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
+  'Sulu\Article\Migrations\Version20260429120000' --add --no-interaction"
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
+  'Sulu\Page\Migrations\Version20260429120000' --add --no-interaction"
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
+  'Sulu\Snippet\Migrations\Version20260429120000' --add --no-interaction"
+
+# 4. Run the seed migration (loads demo content)
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:migrate --no-interaction"
 ```
 
-## 7. Manual Deploy (emergency)
+### Why not `sulu:build prod`?
+
+`sulu:build prod` also runs `doctrine:fixtures:load`, which conflicts with the seed migration data. Use the manual sequence above instead.
+
+### Reset the admin password
+
+The seed migration sets the admin password to `!!` (disabled). Reset it after the first deploy:
+
+```bash
+# 1. Generate a bcrypt hash interactively
+ssh -p 10130 deploy@paul130.mikrus.xyz \
+  "docker exec architecture-hub-backend-1 php bin/console security:hash-password"
+
+# 2. Store it (replace HASH_HERE with the output of step 1)
+ssh -p 10130 deploy@paul130.mikrus.xyz \
+  "docker exec architecture-hub-backend-1 php bin/console doctrine:query:sql \
+  \"UPDATE se_users SET password = 'HASH_HERE' WHERE username = 'admin'\""
+```
+
+> `sulu:security:user:change-password` does not exist in this Sulu version. Use the two-step approach above.
+
+## 8. Manual Deploy (emergency)
 
 ```bash
 ansible-playbook ansible/playbooks/deploy.yml \
@@ -127,7 +168,7 @@ ansible-playbook ansible/playbooks/deploy.yml \
   --vault-password-file ~/.vault_pass
 ```
 
-## 8. Pre-commit Hooks
+## 9. Pre-commit Hooks
 
 The frontend uses `husky` + `lint-staged` to enforce formatting and linting before every commit:
 
@@ -137,19 +178,31 @@ The frontend uses `husky` + `lint-staged` to enforce formatting and linting befo
 
 Hooks run on manual commits. CI remains the authoritative gate for all checks.
 
-## 9. Deployment Topology
+## 10. Deployment Topology
 
 ```
                 Internet
                    │
-         ┌─────────┴──────────┐
-    [ Vercel ]           [ nginx / VPS ]
-   Next.js frontend       /           \
-  arch-hub.vercel.app  admin.domain   api.domain
-                              \           /
-                           [ Sulu :8000 ]
-                                  │
-                           [ PostgreSQL :5432 ]
+               Cloudflare
+              /           \
+    patrykarc.tojest.dev   patrykapi.tojest.dev
+         (admin)                  (api)
+              \                  /
+           [ nginx / VPS :80 ]
+           /admin/*  |  *.json, /api/*, /media/*
+                     |
+                [ Sulu :8000 ]
+                     │
+              [ PostgreSQL :5432 ]
+
+   Next.js frontend → Vercel (arch-hub-tawny.vercel.app)
+   fetches from patrykapi.tojest.dev at runtime
 ```
 
 All backend services run as Docker containers managed by `docker-compose.prod.yml`. Nginx is installed directly on the host and proxies to containers bound to `127.0.0.1`.
+
+### nginx security notes
+
+- **`merge_slashes off`** on the admin block — prevents `//admin` from being normalised to `/admin` by nginx before forwarding. Without this, nginx normalises for routing but forwards the original URI to the backend, so PHP receives `//admin`, which does not match Sulu's `^\/admin` check and falls into website context.
+- Both server blocks enforce strict path allowlists; unmatched paths return `404` directly from nginx without touching the backend.
+- The Sulu Docker image adds `server-opts.d/a_headless.conf` (sorts before `security.conf` alphabetically) to allow `*.json` URL suffixes that the default dotfile-blocking rule in `security.conf` would otherwise deny (`location ~ /\.` blocks `/.json`).
