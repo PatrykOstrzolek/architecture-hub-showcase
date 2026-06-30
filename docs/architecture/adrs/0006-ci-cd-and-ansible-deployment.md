@@ -50,5 +50,6 @@ Ansible is run directly from the GitHub Actions runner (not a separate Ansible T
 ### Negative
 
 - GitHub Actions runner must have SSH access to the production server — requires firewall rule allowing GitHub's IP ranges on port 22
-- `community.docker` Ansible collection must be installed on the runner at deploy time (added as a step in `cd.yml`)
+- `community.docker` Ansible collection must be installed on the runner at deploy time (added as a step in `cd-backend.yml`)
+- All third-party Actions are pinned to full 40-character commit SHAs (not version tags) to prevent supply-chain attacks; SHA values must be manually updated when actions are upgraded
 - Single-server topology has no high availability; acceptable for a showcase project
