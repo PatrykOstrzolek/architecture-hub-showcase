@@ -78,8 +78,8 @@ Add these in **Settings → Secrets and variables → Actions**:
 | `PRODUCTION_HOST` | `cd-backend` | VPS IP address or hostname |
 | `ANSIBLE_VAULT_PASSWORD` | `cd-backend` | Password for `ansible/group_vars/vault.yml` |
 | `VERCEL_TOKEN` | `cd-frontend` | Personal access token from Vercel Account Settings → Tokens |
-| `VERCEL_ORG_ID` | `cd-frontend` | `team_gWZc553cRPxf1ZKpFg2yRxNq` (archhub team) |
-| `VERCEL_PROJECT_ID` | `cd-frontend` | `prj_yZr1N3ce8L5Z96CfOyJjP1om1bGw` (arch-hub project) |
+| `VERCEL_ORG_ID` | `cd-frontend` | Find under Vercel team Settings → General |
+| `VERCEL_PROJECT_ID` | `cd-frontend` | Find under Vercel project Settings → General |
 
 ## 5. Vercel Environment Variables
 
@@ -117,7 +117,8 @@ After provisioning, push to `main` to trigger the first automated deployment.
 The automated deploy pipeline does **not** initialise the database. Run these once after the first container is up:
 
 ```bash
-SERVER="ssh -p 10130 deploy@paul130.mikrus.xyz"
+# Set these to match your server — see docs/operations/mikrus-server.md (gitignored)
+SERVER="ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST"
 CONTAINER="architecture-hub-backend-1"
 
 # 1. Create the Sulu schema (all tables)
@@ -150,7 +151,7 @@ The seed migration sets the admin password to `!!` (disabled). Reset it after th
 ```bash
 # Hash the password and write it to the DB in one shot.
 # Uses PHP stdin to avoid bcrypt's $ signs being expanded by the remote shell.
-ssh -p 10130 deploy@paul130.mikrus.xyz 'docker exec -i architecture-hub-backend-1 php' << 'PHP'
+ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST 'docker exec -i architecture-hub-backend-1 php' << 'PHP'
 <?php
 $hash = password_hash('YOUR_PASSWORD_HERE', PASSWORD_BCRYPT, ['cost' => 13]);
 $url = parse_url(getenv('DATABASE_URL'));
