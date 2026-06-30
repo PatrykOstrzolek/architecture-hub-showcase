@@ -214,7 +214,8 @@ async function suluFetch<T>(
   try {
     res = await fetch(`${BASE_URL}${path}`, {
       headers: { Accept: "application/json" },
-      next: revalidate > 0 ? { revalidate, tags: ["content"] } : { revalidate: 0 },
+      next:
+        revalidate > 0 ? { revalidate, tags: ["content"] } : { revalidate: 0 },
     })
   } catch {
     throw new SuluUnavailableError(`Sulu backend unreachable: ${BASE_URL}`)

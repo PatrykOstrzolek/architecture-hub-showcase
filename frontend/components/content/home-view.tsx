@@ -169,7 +169,10 @@ export function HomeView({
       <header className="mb-12 flex items-start justify-between gap-8">
         <div className="min-w-0">
           <p className="mb-2 flex items-center gap-2 font-mono text-[11px] tracking-widest text-primary uppercase">
-            <span className="inline-block size-2 rounded-full bg-primary" aria-hidden="true" />
+            <span
+              className="inline-block size-2 rounded-full bg-primary"
+              aria-hidden="true"
+            />
             Software Architecture
           </p>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -189,7 +192,10 @@ export function HomeView({
       <section>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase">
-            <span className="inline-block size-2 rounded-full bg-primary" aria-hidden="true" />
+            <span
+              className="inline-block size-2 rounded-full bg-primary"
+              aria-hidden="true"
+            />
             Latest articles
           </h2>
           <span className="font-mono text-xs text-muted-foreground">
@@ -208,7 +214,10 @@ export function HomeView({
                 <Card className="h-full transition-all duration-150 group-hover:shadow-md group-hover:ring-1 group-hover:ring-primary/20">
                   <CardHeader className="pb-3">
                     <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-primary uppercase">
-                      <span className="inline-block size-1.5 rounded-full bg-primary" aria-hidden="true" />
+                      <span
+                        className="inline-block size-1.5 rounded-full bg-primary"
+                        aria-hidden="true"
+                      />
                       Featured
                     </p>
                     <CardTitle className="mt-1 text-lg/snug transition-colors group-hover:text-primary">

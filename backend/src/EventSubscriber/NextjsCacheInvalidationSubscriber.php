@@ -16,7 +16,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * is published or unpublished in Sulu, invalidating the Next.js Data Cache immediately
  * instead of waiting for the 60-second time-based TTL to expire.
  *
- * Requires NEXT_REVALIDATE_URL and NEXT_REVALIDATE_SECRET to be set in the environment.
+ * Requires NEXT_REVALIDATE_URL and REVALIDATE_SECRET to be set in the environment.
  * Both vars default to empty string (subscriber is a no-op if unconfigured).
  */
 class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
@@ -63,9 +63,11 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
         }
 
         try {
-            $response = $this->httpClient->request('POST', $this->nextRevalidateUrl . '/api/revalidate', [
+            $response = $this->httpClient->request('POST', \rtrim($this->nextRevalidateUrl, '/') . '/api/revalidate', [
                 'headers' => ['Authorization' => 'Bearer ' . $this->nextRevalidateSecret],
+                'connect_timeout' => 5,
                 'timeout' => 5,
+                'max_duration' => 5,
             ]);
             $status = $response->getStatusCode();
             if (200 !== $status) {

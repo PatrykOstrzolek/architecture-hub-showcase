@@ -26,4 +26,4 @@ services:
     App\EventSubscriber\NextjsCacheInvalidationSubscriber:
         arguments:
             $nextRevalidateUrl: '%env(default::NEXT_REVALIDATE_URL)%'
-            $nextRevalidateSecret: '%env(default::NEXT_REVALIDATE_SECRET)%'
+            $nextRevalidateSecret: '%env(default::REVALIDATE_SECRET)%'
