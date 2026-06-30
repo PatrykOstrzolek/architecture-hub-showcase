@@ -39,7 +39,7 @@ class SetUserPasswordCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $username = $input->getArgument('username');
 
-        if (!is_string($username)) {
+        if (!\is_string($username)) {
             $io->error('Username must be a string.');
 
             return Command::FAILURE;
@@ -49,7 +49,7 @@ class SetUserPasswordCommand extends Command
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
 
         if (null === $user) {
-            $io->error(sprintf('User "%s" not found.', $username));
+            $io->error(\sprintf('User "%s" not found.', $username));
 
             return Command::FAILURE;
         }
@@ -69,7 +69,7 @@ class SetUserPasswordCommand extends Command
             return Command::FAILURE;
         }
 
-        assert(is_string($password));
+        \assert(\is_string($password));
 
         $confirm = new Question('Confirm password: ');
         $confirm->setHidden(true);
@@ -88,7 +88,7 @@ class SetUserPasswordCommand extends Command
 
         $this->entityManager->flush();
 
-        $io->success(sprintf('Password updated for user "%s".', $username));
+        $io->success(\sprintf('Password updated for user "%s".', $username));
 
         return Command::SUCCESS;
     }
