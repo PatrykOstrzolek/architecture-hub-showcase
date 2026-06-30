@@ -31,56 +31,93 @@ The key knob for this project is the **Data Cache** `revalidate` interval.
 |----------|-----------|------------|-----|
 | `cache: 'no-store'` | Always fresh | Zero | Defeats caching; all requests hit Sulu |
 | `revalidate: N` (time-based) | Up to N seconds stale | Zero | Simple, safe, no wiring |
-| On-demand revalidation via Sulu webhook | Near-instant after publish | Webhook + secret setup | Overkill for showcase |
+| On-demand revalidation via webhook | Near-instant after publish | Webhook + secret setup | Practical now that frontend is on Vercel |
 
-### Webhook hazards (why it was not chosen)
+### Webhook design
 
 On-demand revalidation requires a publicly reachable Next.js endpoint that Sulu calls on every
-publish event. Hazards include: unauthenticated endpoint abuse, path injection if the payload
-path is passed to `revalidatePath()` directly, silent delivery failure if Next.js is unreachable,
-and thundering-herd on bulk publishes. Mitigations exist (shared secret, tag-based revalidation,
-fallback TTL) but add operational complexity not justified for a showcase.
+publish/unpublish event. Hazards and mitigations:
+
+| Hazard | Mitigation |
+|--------|------------|
+| Unauthenticated abuse | `Authorization: Bearer <secret>` header; 401 on mismatch |
+| Path injection | Tag-based invalidation (`revalidateTag('content')`) — no path from payload |
+| Silent delivery failure | 60 s time-based TTL remains as safety-net fallback |
+| Thundering-herd | Sulu publishes one document at a time; not a concern in practice |
+
+With the frontend on Vercel (ADR 0009), the `POST /api/revalidate` endpoint is publicly reachable
+and `NEXT_REVALIDATE_URL` / `NEXT_REVALIDATE_SECRET` can be managed alongside the existing Vercel
+and GitHub secrets already in use.
 
 ## Decision
 
-Use **time-based revalidation with a 60-second window** for all content and listing fetches.
-Live search (`/api/search`) is excluded — it is user-driven and must always return current results.
+Use **on-demand revalidation** as the primary mechanism, with **time-based revalidation (60 s)**
+as a fallback TTL. All cached `suluFetch()` calls are tagged `'content'`; a single
+`revalidateTag('content')` call purges the entire Data Cache on demand.
+
+Live search (`/api/search`) is excluded from caching entirely — it is user-driven and must always
+return current results.
 
 ```
-REVALIDATE_SECONDS = 60   (defined in frontend/lib/sulu.ts)
+REVALIDATE_SECONDS = 60   (fallback TTL defined in frontend/lib/sulu.ts)
+NEXT_REVALIDATE_URL      (env var — public Vercel URL of the frontend)
+NEXT_REVALIDATE_SECRET   (env var — shared Bearer token, kept in Ansible vault / GitHub Secrets)
 ```
 
-Applied via the `suluFetch` helper's default `revalidate` parameter:
+### Cached endpoints
 
-| Function | Endpoint | Revalidate |
-|----------|----------|------------|
-| `getContent()` | `{path}.json` | 60 s |
-| `getNavigation()` | `/api/navigations/{context}` | 60 s |
-| `getArticles()` | `/api/articles?page=&limit=` | 60 s |
-| `searchByTaxonomy()` | `/api/articles?category=` / `?tag=` | 60 s |
-| `search()` | `/api/search?q=` | 0 (no cache) |
+| Function | Endpoint | Revalidate | Tags |
+|----------|----------|------------|------|
+| `getContent()` | `{path}.json` | 60 s | `content` |
+| `getNavigation()` | `/api/navigations/{context}` | 60 s | `content` |
+| `getArticles()` | `/api/articles?page=&limit=` | 60 s | `content` |
+| `searchByTaxonomy()` | `/api/articles?category=` / `?tag=` | 60 s | `content` |
+| `search()` | `/api/search?q=` | 0 (no cache) | — |
+
+### How invalidation is triggered
+
+Two complementary triggers both POST to `{NEXT_REVALIDATE_URL}/api/revalidate`:
+
+1. **Sulu publish event (Phase 2)** — `NextjsCacheInvalidationSubscriber` subscribes to
+   `PageWorkflowTransitionAppliedEvent` and `ArticleWorkflowTransitionAppliedEvent`. Fires
+   synchronously with a 5 s timeout; failures are logged and do not abort the publish action.
+   The 60 s TTL acts as a silent fallback if the call fails.
+
+2. **Backend CI/CD deploy (Phase 1)** — the `deploy-backend` GitHub Actions job fires the same
+   endpoint via `curl` after Ansible completes. Ensures the cache is fresh after any backend
+   code or config change, even outside of editorial publish actions. Marked
+   `continue-on-error: true` so a revalidation failure does not block the deploy.
+
+### Required secrets / variables
+
+| Store | Key | Value |
+|-------|-----|-------|
+| Vercel env var | `REVALIDATE_SECRET` | Shared Bearer token |
+| GitHub Secret | `REVALIDATE_SECRET` | Same token |
+| GitHub Variable | `NEXT_PUBLIC_URL` | e.g. `https://arch-hub.vercel.app` |
+| Backend `.env.local` / Ansible vault | `NEXT_REVALIDATE_URL` | Same as above |
+| Backend `.env.local` / Ansible vault | `NEXT_REVALIDATE_SECRET` | Same token |
 
 ## Communication contract (Sulu → Next.js)
 
-In the current single-VPS topology, Next.js calls Sulu **server-side only**, via the internal
-`SULU_BASE_URL` (`http://127.0.0.1:8000`). Sulu does not call Next.js. There is no webhook,
-no push mechanism, and no WebSocket between the two services.
-
-If the topology changes (e.g. Next.js deployed to Vercel), the revalidation strategy should be
-revisited — on-demand revalidation via a secret-authenticated webhook becomes practical and the
-time-based fallback should remain as a safety net.
+Next.js calls Sulu server-side via `SULU_BASE_URL` (public `api.yourdomain.com`). Sulu calls
+Next.js via `NEXT_REVALIDATE_URL` on publish/unpublish. The shared secret travels only in
+`Authorization` headers; it is never embedded in URLs or response bodies.
 
 ## Consequences
 
 ### Positive
 
-*   Zero infrastructure change — no webhook endpoint, no Sulu configuration.
-*   Content staleness is bounded and predictable (≤ 60 s).
-*   Reduces Sulu backend load significantly under concurrent traffic.
+*   Content published in Sulu is live on the frontend within seconds, not up to 60 s.
+*   Tag-based invalidation purges all affected endpoints in one call with no path enumeration.
+*   The 60 s TTL fallback makes the system self-healing — a missed webhook does not cause
+    permanent staleness.
+*   No new infrastructure required beyond secrets already managed in the project.
 
 ### Negative / Risks
 
-*   An editor publishing a change will not see it live for up to 60 seconds. Acceptable for a
-    showcase; would need on-demand revalidation for a time-sensitive production site.
-*   If `REVALIDATE_SECONDS` is changed, the behaviour of all cached endpoints changes together.
-    Per-endpoint tuning is possible by passing an explicit second argument to `suluFetch()`.
+*   The Sulu publish action now makes an outbound HTTP call. Latency is bounded by the 5 s
+    timeout; a slow or unreachable Vercel endpoint adds at most 5 s to a publish.
+*   If `NEXT_REVALIDATE_SECRET` is rotated, it must be updated in three places (Vercel, GitHub,
+    Ansible vault) simultaneously or the webhook will return 401 until all are in sync.
+*   `symfony/http-client` is now a direct backend dependency (was previously only transitive).

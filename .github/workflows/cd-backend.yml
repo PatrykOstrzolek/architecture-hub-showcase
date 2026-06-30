@@ -96,3 +96,13 @@ jobs:
           --vault-password-file ~/.vault_pass
           --extra-vars "ansible_host=${{ secrets.PRODUCTION_HOST }} image_tag=${{ needs.build-and-push.outputs.image_tag }} ghcr_owner=${{ env.GHCR_OWNER_LC }}"
         working-directory: ${{ github.workspace }}/ansible
+
+      - name: Revalidate Next.js cache
+        continue-on-error: true
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          NEXT_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_URL }}
+        run: |
+          curl --fail --silent --show-error --max-time 10 \
+            -X POST "${NEXT_PUBLIC_URL}/api/revalidate" \
+            -H "Authorization: Bearer ${REVALIDATE_SECRET}"
