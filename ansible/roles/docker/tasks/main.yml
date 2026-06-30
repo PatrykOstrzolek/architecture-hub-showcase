@@ -12,7 +12,7 @@
     uris: https://download.docker.com/linux/ubuntu
     suites: "{{ ansible_facts['distribution_release'] }}"
     components: stable
-    architectures: amd64
+    architectures: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
     signed_by: https://download.docker.com/linux/ubuntu/gpg
     state: present
   register: docker_repo

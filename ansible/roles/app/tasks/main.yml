@@ -35,3 +35,19 @@
     recreate: always
     state: present
     remove_orphans: true
+
+- name: Wait for backend to respond
+  uri:
+    url: http://127.0.0.1:8000/admin/
+    status_code: [200, 301, 302]
+    follow_redirects: none
+  register: _health
+  until: _health.status in [200, 301, 302]
+  retries: 12
+  delay: 5
+
+- name: Warm Symfony cache
+  command: >
+    docker exec architecture-hub-backend-1
+    php -d memory_limit=1G bin/console cache:warmup --env=prod
+  become_user: "{{ app_user }}"

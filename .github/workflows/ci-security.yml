@@ -13,17 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Trivy
-        run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-
       - name: Trivy — filesystem scan
-        run: |
-          trivy fs . \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            --ignore-unfixed \
-            --skip-dirs backend/var,backend/vendor,frontend/node_modules,.next \
-            --quiet
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          skip-dirs: backend/var,backend/vendor,frontend/node_modules,.next
+          exit-code: 1
 
       - name: Semgrep
         run: |

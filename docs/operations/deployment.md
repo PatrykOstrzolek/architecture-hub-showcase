@@ -101,11 +101,11 @@ ansible-vault encrypt ansible/group_vars/all/vault.yml
 
 # 2. Update ansible/group_vars/all/main.yml with your domain names and GitHub username
 
-# 3. Update ansible/inventory/production.ini with your VPS hostname and SSH port
-
-# 4. Provision the server (installs Docker, nginx, renders the nginx vhost with correct server_names)
+# 3. Provision the server (installs Docker, nginx, renders the nginx vhost with correct server_names)
+#    Pass the VPS IP via ansible_host — the inventory uses a stable alias, never a hardcoded IP.
 cd ansible
-ansible-playbook playbooks/provision.yml -i inventory/production.ini -e "ansible_user=root" --ask-vault-pass
+ansible-playbook playbooks/provision.yml -i inventory/production.ini \
+  -e "ansible_user=root ansible_host=YOUR_VPS_IP" --ask-vault-pass
 ```
 
 > **Mikrus note:** SSH port is 10130 (Mikrus NAT forwards to internal port 22). Nginx listens on `[::]:80` (IPv6 only — no dedicated IPv4). See `docs/operations/mikrus-server.md` (gitignored) for full server details.
@@ -168,10 +168,13 @@ PHP
 
 ## 8. Manual Deploy (emergency)
 
+Both `ansible_host` and `image_tag` are required — neither has a default.
+
 ```bash
 ansible-playbook ansible/playbooks/deploy.yml \
   -i ansible/inventory/production.ini \
-  --vault-password-file ~/.vault_pass
+  --vault-password-file ~/.vault_pass \
+  -e "ansible_host=YOUR_VPS_IP image_tag=<git-sha>"
 ```
 
 ## 9. Pre-commit Hooks

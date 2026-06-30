@@ -20,7 +20,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: intl, pdo_mysql, opcache
+          extensions: intl, pdo_pgsql, opcache
           coverage: none
           ini-values: memory_limit=1G
 
@@ -30,6 +30,13 @@ jobs:
           path: backend/vendor
           key: composer-${{ hashFiles('backend/composer.lock') }}
           restore-keys: composer-
+
+      - name: Cache PHPStan result cache
+        uses: actions/cache@v4
+        with:
+          path: backend/var/cache/.phpstan.result.cache
+          key: phpstan-${{ hashFiles('backend/composer.lock', 'backend/phpstan.ci.neon') }}
+          restore-keys: phpstan-
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
