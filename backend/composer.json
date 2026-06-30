@@ -28,6 +28,7 @@
         "php": "^8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-pdo": "*",
         "ext-zlib": "*",
         "cmsig/seal-loupe-adapter": "^0.12.2",
         "doctrine/doctrine-bundle": "^2.13",

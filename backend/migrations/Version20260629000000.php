@@ -14,6 +14,14 @@ final class Version20260629000000 extends AbstractMigration
         return 'Seed initial demo data. Admin password is disabled (!!); reset with sulu:security:user:change-password admin';
     }
 
+    public function isTransactional(): bool
+    {
+        // Disable Doctrine's surrounding transaction: the seed SQL sets
+        // session_replication_role which conflicts with an open transaction,
+        // and a transaction abort would silently swallow exec() errors.
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $compressed = \file_get_contents(__DIR__ . '/data/seed.sql.gz');
@@ -30,7 +38,12 @@ final class Version20260629000000 extends AbstractMigration
 
         // addSql() uses PDO prepared statements which reject multi-statement SQL.
         // Use exec() on the native connection to run the entire dump in one shot.
-        $this->connection->getNativeConnection()->exec($sql);
+        $pdo = $this->connection->getNativeConnection();
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec($sql);
+        // The dump sets search_path='' which would break Doctrine's own queries
+        // on this connection after exec() returns.
+        $pdo->exec("SET search_path TO public");
     }
 
     public function down(Schema $schema): void
