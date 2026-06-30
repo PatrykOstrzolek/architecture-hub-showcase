@@ -25,6 +25,9 @@ final class Version20260629000000 extends AbstractMigration
             throw new \RuntimeException('Failed to decompress seed.sql.gz');
         }
 
+        // Strip psql metacommands (lines starting with \) — not valid SQL
+        $sql = (string) \preg_replace('/^\\\\.*$/m', '', $sql);
+
         $this->addSql($sql);
     }
 
