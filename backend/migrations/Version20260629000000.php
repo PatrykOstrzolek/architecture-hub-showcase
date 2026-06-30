@@ -43,7 +43,7 @@ final class Version20260629000000 extends AbstractMigration
         $pdo->exec($sql);
         // The dump sets search_path='' which would break Doctrine's own queries
         // on this connection after exec() returns.
-        $pdo->exec("SET search_path TO public");
+        $pdo->exec('SET search_path TO public');
     }
 
     public function down(Schema $schema): void
