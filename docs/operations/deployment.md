@@ -21,7 +21,7 @@ No manual steps are required for a normal release. Push to `main` is the only tr
 | Step | Tool |
 |---|---|
 | Install dependencies | `composer install --no-scripts` |
-| Static analysis | PHPStan |
+| Static analysis | PHPStan (result cache persisted via `actions/cache`) |
 | Code style | PHP CS Fixer (dry-run) |
 | Unit tests | PHPUnit |
 | Dependency audit | `composer audit` |
@@ -60,8 +60,12 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
 
 ### Backend (`cd-backend.yml`)
 
-1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
-2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory; Ansible pulls the new image, templates `.env`, restarts containers
+1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA (priority 700) + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
+2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory:
+   - Prunes unused Docker images (frees disk before pulling)
+   - Templates `.env`, pulls the new image, recreates containers
+   - Health-checks `http://127.0.0.1:8000/admin/` (12 retries × 5 s)
+   - Warms the Symfony cache inside the running container
 
 ### Frontend (`cd-frontend.yml`)
 

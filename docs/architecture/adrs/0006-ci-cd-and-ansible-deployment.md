@@ -17,10 +17,15 @@ The project needed automated quality gates and a repeatable deployment process. 
 
 **GitHub Actions** for CI/CD orchestration. **Ansible** for server provisioning and application deployment.
 
-Two separate workflow files:
+Five workflow files, split by concern:
 
-- `ci.yml` — quality gate (PHPStan, CS Fixer, PHPUnit, typecheck, lint, Prettier, build)
-- `cd.yml` — triggered by `workflow_run` after CI passes; builds Docker images, pushes to GHCR, deploys via Ansible
+- `ci-backend.yml` — PHP quality gate (PHPStan, CS Fixer, PHPUnit, `composer audit`)
+- `ci-frontend.yml` — JS quality gate (typecheck, ESLint, Prettier, `next build`, `npm audit`)
+- `ci-security.yml` — security gate (Trivy filesystem CVE scan, Semgrep SAST); runs independently on every push
+- `cd-backend.yml` — triggered by `workflow_run` after `ci-backend` passes; builds Docker image, pushes to GHCR, deploys via Ansible
+- `cd-frontend.yml` — triggered by `workflow_run` after `ci-frontend` passes; deploys to Vercel via `vercel deploy --prod`
+
+Frontend and backend pipelines are fully independent — a failing backend never blocks a frontend deployment.
 
 Ansible is run directly from the GitHub Actions runner (not a separate Ansible Tower/AWX instance), which is sufficient for a single-server setup.
 
@@ -40,7 +45,7 @@ Ansible is run directly from the GitHub Actions runner (not a separate Ansible T
 - Server state is fully described in `ansible/` and reproducible on any fresh VPS
 - Secrets are encrypted at rest (Ansible Vault) and in transit (GitHub Secrets)
 - Docker images are immutable artifacts tagged by git SHA — rollback is `docker compose pull` with a previous tag
-- CI checks run in parallel (backend / frontend jobs), keeping feedback fast
+- CI checks run in parallel (backend, frontend, and security workflows are independent), keeping feedback fast
 
 ### Negative
 
