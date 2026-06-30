@@ -35,13 +35,3 @@
     recreate: always
     state: present
     remove_orphans: true
-
-- name: Run Symfony cache warmup
-  community.docker.docker_container_exec:
-    container: "{{ app_dir | basename }}-backend-1"
-    command: php bin/console cache:warmup --env=prod
-    user: www-data
-    env:
-      APP_ENV: prod
-      APP_SECRET: "{{ vault_app_secret }}"
-      DATABASE_URL: "postgresql://{{ vault_db_user }}:{{ vault_db_password }}@db:5432/{{ vault_db_database }}?serverVersion=16&charset=utf8"
