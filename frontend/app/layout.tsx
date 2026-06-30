@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist, JetBrains_Mono } from "next/font/google"
+import { Instrument_Sans, JetBrains_Mono } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -23,9 +23,10 @@ export const metadata: Metadata = {
   },
 }
 
-const fontSans = Geist({
+const fontSans = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
 })
 
 const jetbrainsMono = JetBrains_Mono({
