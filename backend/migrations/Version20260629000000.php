@@ -28,7 +28,9 @@ final class Version20260629000000 extends AbstractMigration
         // Strip psql metacommands (lines starting with \) — not valid SQL
         $sql = (string) \preg_replace('/^\\\\.*$/m', '', $sql);
 
-        $this->addSql($sql);
+        // addSql() uses PDO prepared statements which reject multi-statement SQL.
+        // Use exec() on the native connection to run the entire dump in one shot.
+        $this->connection->getNativeConnection()->exec($sql);
     }
 
     public function down(Schema $schema): void
