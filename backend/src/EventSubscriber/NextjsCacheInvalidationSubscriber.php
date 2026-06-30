@@ -10,9 +10,6 @@ use Sulu\Content\Domain\Model\WorkflowInterface;
 use Sulu\Page\Domain\Event\PageWorkflowTransitionAppliedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Throwable;
-
-use function in_array;
 
 /**
  * Fires a POST /api/revalidate request to the Next.js frontend whenever a page or article
@@ -46,14 +43,14 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
 
     public function onPageTransition(PageWorkflowTransitionAppliedEvent $event): void
     {
-        if (in_array($event->getWorkflowTransitionName(), self::PUBLISH_TRANSITIONS, true)) {
+        if (\in_array($event->getWorkflowTransitionName(), self::PUBLISH_TRANSITIONS, true)) {
             $this->revalidate();
         }
     }
 
     public function onArticleTransition(ArticleWorkflowTransitionAppliedEvent $event): void
     {
-        if (in_array($event->getWorkflowTransitionName(), self::PUBLISH_TRANSITIONS, true)) {
+        if (\in_array($event->getWorkflowTransitionName(), self::PUBLISH_TRANSITIONS, true)) {
             $this->revalidate();
         }
     }
@@ -73,7 +70,7 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
             if (200 !== $status) {
                 $this->logger->warning('Next.js revalidation returned unexpected status.', ['status' => $status]);
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('Next.js cache revalidation failed.', ['error' => $e->getMessage()]);
         }
     }
