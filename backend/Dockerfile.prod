@@ -2,6 +2,13 @@ FROM serversideup/php:8.5-fpm-nginx AS builder
 USER root
 RUN install-php-extensions intl gd apcu opcache
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Allow Sulu Headless *.json format suffix before the dotfile security rule.
+# security.conf blocks /\.* (dotfiles); /.json is the root page in JSON format.
+# Files in server-opts.d are included alphabetically; "a_" sorts before "security".
+RUN printf 'location ~ \\.json$ {\n    try_files $uri /index.php?$query_string;\n}\n' \
+    > /etc/nginx/server-opts.d/a_headless.conf
+
 WORKDIR /var/www/html
 COPY --chown=www-data:www-data composer.json composer.lock ./
 RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-scripts
