@@ -3,6 +3,10 @@
   hosts: web
   become: true
 
+  vars_files:
+    - ../group_vars/all/main.yml
+    - ../group_vars/all/vault.yml
+
   roles:
     - common
     - docker

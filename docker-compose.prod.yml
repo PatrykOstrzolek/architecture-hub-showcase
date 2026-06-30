@@ -23,6 +23,8 @@ services:
       APP_SECRET: ${APP_SECRET}
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DATABASE}?serverVersion=16&charset=utf8
       DEFAULT_URI: ${DEFAULT_URI}
+      LOCK_DSN: flock
+      SEAL_DSN: loupe:///var/www/html/var/indexes
     volumes:
       - uploads:/var/www/html/public/uploads
     depends_on:
