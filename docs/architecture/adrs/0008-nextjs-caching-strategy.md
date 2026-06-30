@@ -40,13 +40,13 @@ publish/unpublish event. Hazards and mitigations:
 
 | Hazard | Mitigation |
 |--------|------------|
-| Unauthenticated abuse | `Authorization: Bearer <secret>` header; 401 on mismatch |
+| Unauthenticated abuse | `Authorization: Bearer <secret>` header; constant-time comparison; 401 on mismatch |
 | Path injection | Tag-based invalidation (`revalidateTag('content')`) — no path from payload |
 | Silent delivery failure | 60 s time-based TTL remains as safety-net fallback |
 | Thundering-herd | Sulu publishes one document at a time; not a concern in practice |
 
 With the frontend on Vercel (ADR 0009), the `POST /api/revalidate` endpoint is publicly reachable
-and `NEXT_REVALIDATE_URL` / `NEXT_REVALIDATE_SECRET` can be managed alongside the existing Vercel
+and `NEXT_REVALIDATE_URL` / `REVALIDATE_SECRET` can be managed alongside the existing Vercel
 and GitHub secrets already in use.
 
 ## Decision
@@ -60,8 +60,8 @@ return current results.
 
 ```
 REVALIDATE_SECONDS = 60   (fallback TTL defined in frontend/lib/sulu.ts)
-NEXT_REVALIDATE_URL      (env var — public Vercel URL of the frontend)
-NEXT_REVALIDATE_SECRET   (env var — shared Bearer token, kept in Ansible vault / GitHub Secrets)
+NEXT_REVALIDATE_URL      (backend env var — public Vercel URL of the frontend)
+REVALIDATE_SECRET        (shared Bearer token — same name in Vercel, GitHub Secrets, and backend .env)
 ```
 
 ### Cached endpoints
@@ -80,8 +80,9 @@ Two complementary triggers both POST to `{NEXT_REVALIDATE_URL}/api/revalidate`:
 
 1. **Sulu publish event (Phase 2)** — `NextjsCacheInvalidationSubscriber` subscribes to
    `PageWorkflowTransitionAppliedEvent` and `ArticleWorkflowTransitionAppliedEvent`. Fires
-   synchronously with a 5 s timeout; failures are logged and do not abort the publish action.
-   The 60 s TTL acts as a silent fallback if the call fails.
+   synchronously; bounded by `connect_timeout`, `timeout`, and `max_duration` (all 5 s).
+   Failures are logged and do not abort the publish action. The 60 s TTL acts as a silent
+   fallback if the call fails.
 
 2. **Backend CI/CD deploy (Phase 1)** — the `deploy-backend` GitHub Actions job fires the same
    endpoint via `curl` after Ansible completes. Ensures the cache is fresh after any backend
@@ -95,8 +96,8 @@ Two complementary triggers both POST to `{NEXT_REVALIDATE_URL}/api/revalidate`:
 | Vercel env var | `REVALIDATE_SECRET` | Shared Bearer token |
 | GitHub Secret | `REVALIDATE_SECRET` | Same token |
 | GitHub Variable | `NEXT_PUBLIC_URL` | e.g. `https://arch-hub.vercel.app` |
-| Backend `.env.local` / Ansible vault | `NEXT_REVALIDATE_URL` | Same as above |
-| Backend `.env.local` / Ansible vault | `NEXT_REVALIDATE_SECRET` | Same token |
+| Backend `.env` / Ansible vault | `NEXT_REVALIDATE_URL` | Same as above |
+| Backend `.env` / Ansible vault | `REVALIDATE_SECRET` | Same token |
 
 ## Communication contract (Sulu → Next.js)
 
@@ -117,7 +118,7 @@ Next.js via `NEXT_REVALIDATE_URL` on publish/unpublish. The shared secret travel
 ### Negative / Risks
 
 *   The Sulu publish action now makes an outbound HTTP call. Latency is bounded by the 5 s
-    timeout; a slow or unreachable Vercel endpoint adds at most 5 s to a publish.
-*   If `NEXT_REVALIDATE_SECRET` is rotated, it must be updated in three places (Vercel, GitHub,
+    `max_duration` hard cap; a slow or unreachable Vercel endpoint adds at most 5 s to a publish.
+*   If `REVALIDATE_SECRET` is rotated, it must be updated in three places (Vercel, GitHub Secrets,
     Ansible vault) simultaneously or the webhook will return 401 until all are in sync.
 *   `symfony/http-client` is now a direct backend dependency (was previously only transitive).
