@@ -11,7 +11,7 @@ final class Version20260629000000 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Seed initial demo data. Admin password is disabled (!!); reset with sulu:security:user:change-password admin';
+        return 'Seed initial demo data. Admin password is disabled (!!); reset with app:user:set-password admin';
     }
 
     public function isTransactional(): bool

@@ -149,22 +149,12 @@ $SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:migrate --no
 The seed migration sets the admin password to `!!` (disabled). Reset it after the first deploy:
 
 ```bash
-# Hash the password and write it to the DB in one shot.
-# Uses PHP stdin to avoid bcrypt's $ signs being expanded by the remote shell.
-ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST 'docker exec -i architecture-hub-backend-1 php' << 'PHP'
-<?php
-$hash = password_hash('YOUR_PASSWORD_HERE', PASSWORD_BCRYPT, ['cost' => 13]);
-$url = parse_url(getenv('DATABASE_URL'));
-$dsn = "pgsql:host={$url['host']};port={$url['port']};dbname=" . ltrim($url['path'], '/');
-$pdo = new PDO($dsn, $url['user'], $url['pass']);
-$pdo->prepare("UPDATE se_users SET password = ? WHERE username = ?")->execute([$hash, 'admin']);
-echo "Done: $hash\n";
-PHP
+ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST \
+  "docker exec -it architecture-hub-backend-1 php bin/console app:user:set-password admin"
+# enters new password interactively (hidden input, confirmed twice)
 ```
 
-> **Why not `doctrine:query:sql` with the hash?** Bcrypt hashes contain `$` signs that the remote shell expands as variable names, silently corrupting the hash. The PHP stdin approach bypasses the shell entirely.
->
-> `sulu:security:user:change-password` does not exist in this Sulu version.
+The command uses Symfony's password hasher — the same algorithm Sulu uses — and never passes the password through the shell.
 
 ## 8. Manual Deploy (emergency)
 
