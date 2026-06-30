@@ -10,7 +10,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  revalidateTag("content")
+  revalidateTag("content", {})
 
   return NextResponse.json({ revalidated: true, timestamp: Date.now() })
 }

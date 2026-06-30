@@ -31,7 +31,8 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
         private readonly LoggerInterface $logger,
         private readonly string $nextRevalidateUrl,
         private readonly string $nextRevalidateSecret,
-    ) {}
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -62,8 +63,8 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
         }
 
         try {
-            $response = $this->httpClient->request('POST', $this->nextRevalidateUrl.'/api/revalidate', [
-                'headers' => ['Authorization' => 'Bearer '.$this->nextRevalidateSecret],
+            $response = $this->httpClient->request('POST', $this->nextRevalidateUrl . '/api/revalidate', [
+                'headers' => ['Authorization' => 'Bearer ' . $this->nextRevalidateSecret],
                 'timeout' => 5,
             ]);
             $status = $response->getStatusCode();
