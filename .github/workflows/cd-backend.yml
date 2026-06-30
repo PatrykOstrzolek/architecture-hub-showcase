@@ -42,7 +42,7 @@ jobs:
         with:
           images: ${{ env.BACKEND_IMAGE }}
           tags: |
-            type=sha,prefix=
+            type=sha,prefix=,priority=700
             type=raw,value=latest
 
       - name: Build and push backend image
@@ -72,7 +72,7 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
 
