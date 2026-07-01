@@ -3,6 +3,12 @@
 Cross-reference of every acceptance criterion from `product-spec.md` and the feature specs.
 Update this file whenever a criterion is met or a new one is added.
 
+**Status: MVP complete (2026-07-01).** All `product-spec.md` §4 scope items and §7 acceptance
+criteria are checked off below, and every entry in the Open Gaps table is resolved. Interactive
+Exercises (`features/exercises.md`) was pulled forward from §5 Future Enhancements and is also
+done. Remaining Future Enhancements (Personalization, Community Contributions, Advanced
+Visualization) are explicitly out of MVP scope.
+
 Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 
 ---
