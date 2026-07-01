@@ -61,5 +61,14 @@
                 </param>
             </params>
         </property>
+
+        <!-- Optional link to a quiz page under this path. See ADR 0011. -->
+        <property name="exercise" type="single_page_selection" mandatory="false">
+            <meta>
+                <title lang="en">Exercise</title>
+                <title lang="de">Übung</title>
+                <info_text lang="en">Optional quiz page for this learning path.</info_text>
+            </meta>
+        </property>
     </properties>
 </template>

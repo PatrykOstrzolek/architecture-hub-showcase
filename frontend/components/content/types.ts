@@ -38,6 +38,20 @@ export interface CalloutBlock {
 
 export type ArticleBlock = TextBlock | CodeBlock | ImageBlock | CalloutBlock
 
+// --- Exercise blocks --------------------------------------------------
+
+export interface MultipleChoiceBlock {
+  type: "multiple_choice"
+  settings: unknown[]
+  question: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+  correct: "a" | "b" | "c" | "d"
+  explanation: string | null
+}
+
 // --- Template content shapes ----------------------------------------------
 
 /** `article` template. */
@@ -140,12 +154,30 @@ export interface LearningPathsListingContent {
   paths: LearningPathListingItem[]
 }
 
+/** One item resolved from the `single_page_selection` field on the `learning-path` template's `exercise` field. */
+export interface ExerciseLink {
+  id: string
+  content: {
+    title: string
+    url: string | null
+  }
+}
+
 /** `learning-path` page template — ordered sequence of articles. */
 export interface LearningPathContent {
   title: string
   url: string | null
   description: string
   articles: ArticleSelectionItem[]
+  exercise: ExerciseLink | null
+}
+
+/** `exercise` page template — a quiz attached to a learning path. See ADR 0011. */
+export interface ExerciseContent {
+  title: string
+  url: string | null
+  intro: string | null
+  questions: MultipleChoiceBlock[]
 }
 
 /** Contextual navigation passed to ArticleView when reading inside a learning path. */

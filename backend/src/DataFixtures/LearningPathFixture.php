@@ -85,7 +85,7 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
 
     public function getDependencies(): array
     {
-        return [ArticleFixture::class];
+        return [ArticleFixture::class, ExerciseFixture::class];
     }
 
     /** @throws DBALException */
@@ -139,6 +139,11 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
             }
         }
 
+        $exerciseUuid = $this->connection->fetchOne(
+            'SELECT resource_id FROM ro_routes WHERE slug = ?',
+            [$url . '/exercise'],
+        );
+
         $data = [
             'locale' => 'en',
             'template' => 'learning-path',
@@ -146,6 +151,7 @@ class LearningPathFixture extends Fixture implements FixtureGroupInterface, Depe
             'url' => $url,
             'description' => $description,
             'articles' => $articleUuids,
+            'exercise' => \is_string($exerciseUuid) ? $exerciseUuid : null,
         ];
 
         $existingUuid = $this->connection->fetchOne(

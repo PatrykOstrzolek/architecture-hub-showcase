@@ -52,6 +52,17 @@ export function LearningPathView({
           )
         })}
       </ol>
+
+      {content.exercise ? (
+        <div className="mt-10 border-t pt-8">
+          <Link
+            href={`${content.exercise.content.url ?? "#"}?path=${encodeURIComponent(slug)}`}
+            className="font-mono text-sm font-medium text-primary transition-colors hover:underline"
+          >
+            Test yourself →
+          </Link>
+        </div>
+      ) : null}
     </div>
   )
 }

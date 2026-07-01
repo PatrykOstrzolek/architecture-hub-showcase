@@ -1,0 +1,126 @@
+<?xml version="1.0" ?>
+<template xmlns="http://schemas.sulu.io/template/template"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/template-1.0.xsd">
+
+    <key>exercise</key>
+
+    <view>pages/exercise</view>
+    <controller>Sulu\Bundle\HeadlessBundle\Controller\HeadlessWebsiteController::indexAction</controller>
+    <cacheLifetime>86400</cacheLifetime>
+
+    <meta>
+        <title lang="en">Exercise</title>
+        <title lang="de">Übung</title>
+    </meta>
+
+    <properties>
+        <property name="title" type="text_line" mandatory="true">
+            <meta>
+                <title lang="en">Title</title>
+                <title lang="de">Titel</title>
+            </meta>
+            <params>
+                <param name="headline" value="true"/>
+            </params>
+
+            <tag name="sulu.rlp.part"/>
+            <tag name="sulu.search.field" role="title"/>
+        </property>
+
+        <property name="url" type="route" mandatory="true">
+            <meta>
+                <title lang="en">Resourcelocator</title>
+                <title lang="de">Adresse</title>
+            </meta>
+
+            <tag name="sulu.rlp"/>
+        </property>
+
+        <!-- Optional preamble shown before the first question. -->
+        <property name="intro" type="text_area" mandatory="false">
+            <meta>
+                <title lang="en">Intro</title>
+                <title lang="de">Einleitung</title>
+                <info_text lang="en">Optional preamble shown before the first question.</info_text>
+            </meta>
+        </property>
+
+        <!-- Quiz questions. Single block type by design (see ADR 0011 / exercises spec). -->
+        <block name="questions" default-type="multiple_choice" minOccurs="1" maxOccurs="20">
+            <meta>
+                <title lang="en">Questions</title>
+                <title lang="de">Fragen</title>
+            </meta>
+
+            <types>
+                <type name="multiple_choice">
+                    <meta>
+                        <title lang="en">Multiple choice</title>
+                        <title lang="de">Multiple Choice</title>
+                    </meta>
+                    <properties>
+                        <property name="question" type="text_line" mandatory="true">
+                            <meta>
+                                <title lang="en">Question</title>
+                                <title lang="de">Frage</title>
+                            </meta>
+                        </property>
+
+                        <property name="option_a" type="text_line" mandatory="true" colspan="6">
+                            <meta>
+                                <title lang="en">Option A</title>
+                                <title lang="de">Option A</title>
+                            </meta>
+                        </property>
+
+                        <property name="option_b" type="text_line" mandatory="true" colspan="6">
+                            <meta>
+                                <title lang="en">Option B</title>
+                                <title lang="de">Option B</title>
+                            </meta>
+                        </property>
+
+                        <property name="option_c" type="text_line" mandatory="true" colspan="6">
+                            <meta>
+                                <title lang="en">Option C</title>
+                                <title lang="de">Option C</title>
+                            </meta>
+                        </property>
+
+                        <property name="option_d" type="text_line" mandatory="true" colspan="6">
+                            <meta>
+                                <title lang="en">Option D</title>
+                                <title lang="de">Option D</title>
+                            </meta>
+                        </property>
+
+                        <property name="correct" type="single_select" mandatory="true" colspan="6">
+                            <meta>
+                                <title lang="en">Correct answer</title>
+                                <title lang="de">Richtige Antwort</title>
+                            </meta>
+                            <params>
+                                <param name="default_value" value="a"/>
+                                <param name="values" type="collection">
+                                    <param name="a"><meta><title lang="en">Option A</title></meta></param>
+                                    <param name="b"><meta><title lang="en">Option B</title></meta></param>
+                                    <param name="c"><meta><title lang="en">Option C</title></meta></param>
+                                    <param name="d"><meta><title lang="en">Option D</title></meta></param>
+                                </param>
+                            </params>
+                        </property>
+
+                        <property name="explanation" type="text_area" mandatory="false" colspan="6">
+                            <meta>
+                                <title lang="en">Explanation</title>
+                                <title lang="de">Erklärung</title>
+                                <info_text lang="en">Optional; shown after the user answers.</info_text>
+                            </meta>
+                        </property>
+                    </properties>
+                </type>
+            </types>
+        </block>
+    </properties>
+</template>

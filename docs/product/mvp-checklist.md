@@ -31,6 +31,16 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 - [x] User can navigate sequentially through articles (prev / next)
 - [x] Progress indication ("Article X of Y in this path")
 
+## Exercises (`features/exercises.md`)
+
+- [ ] Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field
+- [ ] Exercise page displays title, optional intro, and all questions
+- [ ] Each question shows four answer options; only one can be selected
+- [ ] Submitting reveals which answers are correct and shows any explanations
+- [ ] "Test yourself →" link appears on the learning path page only when an exercise is linked
+- [ ] Score summary is shown after submission
+- [ ] Refreshing the page resets the quiz
+
 ## Search (`features/search.md`)
 
 - [x] Full-text search results page at `/search?q=`
@@ -64,3 +74,4 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 | 2 | ~~Author pages + listing~~ — done via `AuthorPageFixture` + `authors` template | ~~content task~~ |
 | 3 | ~~Authors in autocomplete~~ — done, deduped by URL | ~~`features/search.md §3.4`~~ |
 | 4 | ~~Nav driven by Sulu navigation API~~ — done; `SiteHeader` is async RSC calling `getNavigation("main")` with static fallback; fixtures seed nav contexts; ADR 0005 | ~~`site-header.tsx`~~ |
+| 5 | Interactive Exercises — template, fixture, and frontend view built (ADR 0011); fixture question copy is still placeholder (`TODO:` strings) pending real content | `features/exercises.md` |

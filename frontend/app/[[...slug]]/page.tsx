@@ -5,6 +5,7 @@ import { getContent, getArticles } from "@/lib/sulu"
 import { ArticleView } from "@/components/content/article-view"
 import { AuthorView } from "@/components/content/author-view"
 import { AuthorsListingView } from "@/components/content/authors-listing-view"
+import { ExerciseView } from "@/components/content/exercise-view"
 import { HomeView } from "@/components/content/home-view"
 import { LearningPathsListingView } from "@/components/content/learning-paths-listing-view"
 import { LearningPathView } from "@/components/content/learning-path-view"
@@ -13,6 +14,7 @@ import type {
   ArticleContent,
   AuthorContent,
   AuthorsListingContent,
+  ExerciseContent,
   HomeContent,
   LearningPathContent,
   LearningPathContext,
@@ -156,6 +158,17 @@ export default async function Page({
         <LearningPathView
           content={data.content as unknown as LearningPathContent}
           slug={lpSlug}
+        />
+      )
+    }
+    case "exercise": {
+      const pathParts = slug ?? []
+      const pathSlug =
+        typeof sp.path === "string" ? sp.path : pathParts[pathParts.length - 2]
+      return (
+        <ExerciseView
+          content={data.content as unknown as ExerciseContent}
+          pathSlug={pathSlug}
         />
       )
     }
