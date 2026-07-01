@@ -31,3 +31,16 @@ services:
     App\Controller\Website\PagePreviewController:
         arguments:
             $previewSecret: '%env(default::PREVIEW_SECRET)%'
+
+    # Tagged sulu.context: admin because it references the admin-context-only
+    # sulu_preview.public_preview_controller service and overrides an
+    # admin-context route (/admin/p/{token}) — see RemoveForeignContextServicesPass.
+    App\Controller\Website\PreviewLinkRedirectController:
+        arguments:
+            $original: '@sulu_preview.public_preview_controller'
+            # Reuses the frontend URL already configured for cache revalidation —
+            # both are "the public Next.js origin", just used in opposite directions.
+            $frontendUrl: '%env(default::NEXT_REVALIDATE_URL)%'
+            $previewSecret: '%env(default::PREVIEW_SECRET)%'
+        tags:
+            - { name: 'sulu.context', context: 'admin' }

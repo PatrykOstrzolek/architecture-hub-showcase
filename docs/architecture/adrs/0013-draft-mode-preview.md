@@ -37,6 +37,19 @@ secret-protected backend endpoint — not a custom Sulu `PreviewRendererInterfac
     the public `{path}.json` route, with `cache: "no-store"`. A
     `DraftModeBanner` server component shows an "Exit preview" link site-wide
     while active.
+*   **One-click trigger, no JS build required**: Sulu's admin toolbar already
+    has a working, already-registered "Share > Generate link" action for
+    pages — it's a *separate* feature from the inline live iframe, backed by
+    `PreviewLinkController`/`PreviewLinkRepositoryInterface` (a DB-persisted
+    `PreviewLink` token, unrelated to the session-based `Preview` service the
+    iframe and the toolbar's "open in new tab" button use). Its public URL,
+    `GET /admin/p/{token}` (route `sulu_preview.public_preview`), normally
+    wraps Sulu's Twig renderer. `App\Controller\Website\PreviewLinkRedirectController`
+    re-registers that exact route name — a standard Symfony technique for
+    overriding bundle routing — and for page resources, redirects straight
+    into `/api/preview` instead. Anything else (a non-page resource type)
+    falls back to Sulu's own `PublicPreviewController`, injected and called
+    directly, so its behavior for non-pages is completely unchanged.
 
 This reuses the exact page components, layouts, and rendering path real
 visitors get — no HTML is faked or duplicated — at the cost of the preview
@@ -53,6 +66,8 @@ only reflecting the last **Save**, not every keystroke.
     exercise-specific) — the same mechanism that fixed the earlier missing-Twig-view
     bug for `learning-paths`/`authors` also gives every current and future page
     template a real-frontend preview for free.
+*   Editors get a real one-click "open in the real frontend" action today, via
+    the existing Share > Generate link button — no `npm`/webpack step needed.
 
 ### Negative / Risks
 
@@ -61,13 +76,30 @@ only reflecting the last **Save**, not every keystroke.
     that unsaved in-memory state, so this only reflects the last Save. Judged
     an acceptable trade for getting the real design instead of the Twig
     fallback.
-*   **No one-click trigger from the Sulu admin UI yet.** Building that would
-    mean a custom Sulu Admin JS toolbar action (`backend/assets/admin/app.js`),
-    which needs an `npm install` + webpack build inside the admin bundle — a
-    different toolchain than anything else built so far, and one this session
-    couldn't run (no Node/npm access). For now the editor opens
-    `{FRONTEND_URL}/api/preview?secret=...&path={resourcelocator}` manually,
-    using the resourcelocator already visible in the page's Content tab.
+*   **Still not live-as-you-type even via the one-click link** — same
+    limitation as above; "Generate link" opens the last-saved draft, not
+    unsaved keystrokes.
+*   **Route-name-override coupling.** `PreviewLinkRedirectController`
+    re-registers `sulu_preview.public_preview` by name — an internal Sulu
+    route (the controllers it touches, `PublicPreviewController` and
+    `PreviewController`, are explicitly marked `@internal No BC promises`).
+    If a Sulu upgrade renames or restructures this route, the override
+    silently stops taking effect (traffic reverts to Sulu's own controller,
+    which just means the Twig fallback returns — not a hard failure, but
+    worth re-checking after any Sulu upgrade via
+    `bin/console debug:router sulu_preview.public_preview`).
+*   **Split DI containers.** Sulu compiles separate `website` and `admin`
+    service containers (`RemoveForeignContextServicesPass`, filtering on a
+    `sulu.context` tag) — `sulu_preview.public_preview_controller` only
+    exists in the `admin` container, so `PreviewLinkRedirectController` has
+    to carry the same `sulu.context: admin` tag itself, or the container
+    fails to compile. Easy to miss when adding future controllers that
+    reference other Sulu-internal admin services.
+*   A custom Sulu Admin JS toolbar action (`backend/assets/admin/app.js`,
+    needing `npm install` + a webpack build this session couldn't run) is
+    still the only way to add a *new* kind of button — but turned out to be
+    unnecessary for this particular feature once the existing "Generate
+    link" action was found and its target route overridden instead.
 *   **New shared secret.** `PREVIEW_SECRET` grants read access to
     *unpublished* content, so it's a distinct credential from
     `REVALIDATE_SECRET` (that one only lets the backend trigger a frontend
@@ -93,9 +125,12 @@ only reflecting the last **Save**, not every keystroke.
     live-as-you-type anyway or building a much larger bridge (streaming
     unsaved form state to Next.js) for the same end result Draft Mode gives
     more simply.
-2.  **Reuse Sulu's built-in shareable "Preview Link" feature**
-    (`PreviewLinkController`/`PublicPreviewController`) and just repoint it at
-    Next.js. Rejected: that subsystem is also hard-wired to
-    `PreviewRendererInterface`'s Twig-string output — there's no JSON path
-    through it to hand to Next.js, so it would need the same renderer swap as
-    option 1.
+2.  **Fully reimplement Sulu's shareable "Preview Link" feature** (its own
+    token generation/storage/UI) from scratch instead of overriding its
+    existing route. Rejected: `PreviewLinkController`, `PreviewLinkManager`,
+    and the "Share > Generate link" admin button already work correctly —
+    token creation, persistence, visit counting, revocation. Only the
+    *rendering* step (`PublicPreviewController::previewAction`, which is
+    Twig-only) needed to change for pages, so overriding just that one route
+    keeps everything else (including the admin UI) untouched and still
+    correct for non-page resources.
