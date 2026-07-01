@@ -125,14 +125,14 @@ export function SearchForm() {
             }
           }}
           onFocus={() => hasResults && setOpen(true)}
-          className="h-8 w-44 text-sm"
+          className="h-8 w-full text-sm md:w-44"
           aria-label="Search"
           autoComplete="off"
         />
       </form>
 
       {open && hasResults && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-80 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md">
+        <div className="absolute top-full left-0 z-50 mt-1 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md">
           {articles.length > 0 && (
             <section>
               <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
