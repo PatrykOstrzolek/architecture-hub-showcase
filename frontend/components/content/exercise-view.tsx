@@ -4,12 +4,19 @@ import { useState } from "react"
 import Link from "next/link"
 import { CheckCircle, XCircle } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
+import { getAnonymousSessionId } from "@/lib/anonymous-session"
 import { Button } from "@/components/ui/button"
-import type { ExerciseContent, MultipleChoiceBlock } from "./types"
+import type {
+  ExerciseContent,
+  ExerciseGradeResult,
+  MultipleChoiceBlock,
+} from "./types"
 
 type QuizState = {
   answers: (string | null)[]
-  submitted: boolean
+  submitting: boolean
+  error: string | null
+  result: ExerciseGradeResult | null
 }
 
 const OPTIONS: Array<{
@@ -24,30 +31,56 @@ const OPTIONS: Array<{
 
 export function ExerciseView({
   content,
+  exerciseId,
   pathSlug,
 }: {
   content: ExerciseContent
+  exerciseId: string
   pathSlug?: string
 }) {
   const questions = content.questions ?? []
   const [state, setState] = useState<QuizState>({
     answers: questions.map(() => null),
-    submitted: false,
+    submitting: false,
+    error: null,
+    result: null,
   })
 
   const allAnswered =
     questions.length > 0 && state.answers.every((a) => a !== null)
-  const score = state.answers.filter(
-    (a, i) => a === questions[i]?.correct
-  ).length
+  const submitted = state.result !== null
 
   function selectAnswer(index: number, option: string) {
-    if (state.submitted) return
+    if (submitted) return
     setState((s) => {
       const answers = [...s.answers]
       answers[index] = option
       return { ...s, answers }
     })
+  }
+
+  async function submit() {
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      const res = await fetch("/api/exercise-attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          exerciseUuid: exerciseId,
+          sessionId: getAnonymousSessionId(),
+          answers: state.answers,
+        }),
+      })
+      if (!res.ok) throw new Error("Submission failed")
+      const result = (await res.json()) as ExerciseGradeResult
+      setState((s) => ({ ...s, submitting: false, result }))
+    } catch {
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        error: "Couldn't submit your answers. Please try again.",
+      }))
+    }
   }
 
   return (
@@ -83,25 +116,30 @@ export function ExerciseView({
             index={i}
             question={question}
             selected={state.answers[i]}
-            submitted={state.submitted}
+            result={state.result?.results[i] ?? null}
             onSelect={(option) => selectAnswer(i, option)}
           />
         ))}
       </div>
 
       <div className="mt-14 border-t pt-10">
-        {!state.submitted ? (
-          <Button
-            type="button"
-            size="lg"
-            disabled={!allAnswered}
-            onClick={() => setState((s) => ({ ...s, submitted: true }))}
-          >
-            Submit
-          </Button>
+        {!submitted ? (
+          <>
+            <Button
+              type="button"
+              size="lg"
+              disabled={!allAnswered || state.submitting}
+              onClick={submit}
+            >
+              {state.submitting ? "Submitting…" : "Submit"}
+            </Button>
+            {state.error ? (
+              <p className="mt-4 text-sm text-red-500">{state.error}</p>
+            ) : null}
+          </>
         ) : (
           <p className="text-lg font-semibold">
-            Score: {score} / {questions.length}
+            Score: {state.result?.score} / {state.result?.total}
           </p>
         )}
       </div>
@@ -113,15 +151,17 @@ function QuestionCard({
   index,
   question,
   selected,
-  submitted,
+  result,
   onSelect,
 }: {
   index: number
   question: MultipleChoiceBlock
   selected: string | null
-  submitted: boolean
+  result: ExerciseGradeResult["results"][number] | null
   onSelect: (option: string) => void
 }) {
+  const submitted = result !== null
+
   return (
     <fieldset className="space-y-3">
       <legend className="font-medium">
@@ -130,7 +170,7 @@ function QuestionCard({
       <div className="space-y-2">
         {OPTIONS.map(({ key, field }) => {
           const isSelected = selected === key
-          const isCorrect = key === question.correct
+          const isCorrect = submitted && key === result.correct
 
           return (
             <label
@@ -174,9 +214,9 @@ function QuestionCard({
           )
         })}
       </div>
-      {submitted && question.explanation ? (
+      {submitted && result.explanation ? (
         <p className="rounded border-l-4 border-sky-500 bg-sky-500/8 p-3 text-sm text-muted-foreground">
-          {question.explanation}
+          {result.explanation}
         </p>
       ) : null}
     </fieldset>

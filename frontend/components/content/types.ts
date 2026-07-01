@@ -40,6 +40,11 @@ export type ArticleBlock = TextBlock | CodeBlock | ImageBlock | CalloutBlock
 
 // --- Exercise blocks --------------------------------------------------
 
+/**
+ * `correct`/`explanation` are stripped from the public headless payload by the
+ * backend (see ADR-0012 / ExerciseAnswerRedactionSubscriber) — grading is
+ * server-authoritative, so this shape never carries the answer key.
+ */
 export interface MultipleChoiceBlock {
   type: "multiple_choice"
   settings: unknown[]
@@ -48,8 +53,17 @@ export interface MultipleChoiceBlock {
   option_b: string
   option_c: string
   option_d: string
-  correct: "a" | "b" | "c" | "d"
-  explanation: string | null
+}
+
+/** Response shape from `POST /api/exercise-attempts`. See ADR-0012. */
+export interface ExerciseGradeResult {
+  score: number
+  total: number
+  results: Array<{
+    correct: "a" | "b" | "c" | "d"
+    isCorrect: boolean
+    explanation: string | null
+  }>
 }
 
 // --- Template content shapes ----------------------------------------------

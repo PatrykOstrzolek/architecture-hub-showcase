@@ -15,9 +15,11 @@ Provide users with optional quiz-style exercises attached to learning paths, all
 - New `exercise` Sulu page template with a `multiple_choice` block type.
 - Each learning path can optionally reference one exercise page via a `single_page_selection` field.
 - Frontend renders the exercise as a single-page quiz with per-question feedback.
-- State is client-side only — no persistence, no user accounts required.
+- Grading is server-authoritative and each submission is persisted, keyed to an
+  anonymous, locally-generated session id — no user accounts. See
+  [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md).
 
-Out of scope for MVP: progress persistence (localStorage or server), multiple exercise pages per path, free-text or code-challenge question types.
+Out of scope for MVP: real user accounts (and merging anonymous attempts into one later), multiple exercise pages per path, free-text or code-challenge question types, retry-limit/cooldown rules, an admin-facing attempts dashboard.
 
 ## 4. Content Model
 
@@ -39,6 +41,11 @@ Out of scope for MVP: progress persistence (localStorage or server), multiple ex
 | `correct` | `single_select` | Values: `a`, `b`, `c`, `d` |
 | `explanation` | `text_area` | Optional; shown after the user answers |
 
+`correct`/`explanation` remain ordinary Sulu properties (needed for admin
+authoring/preview), but are stripped from the **public** headless JSON before
+the user submits — see [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md).
+The frontend only learns them from the `POST /api/exercise-attempts` response.
+
 ### `learning-path` template change
 
 Add one optional field to `backend/config/templates/pages/learning-path.xml`:
@@ -53,7 +60,22 @@ This delivers as `content.exercise: { id, content: { title, url } } | null` via 
 
 ## 5. API
 
-No custom endpoint. The exercise page is served by the existing `HeadlessWebsiteController` at `/learning-paths/{slug}/exercise.json`, exactly like every other template. The frontend fetches it with the same `getContent()` helper.
+The exercise page itself is still served by the existing `HeadlessWebsiteController`
+at `/learning-paths/{slug}/exercise.json`, exactly like every other template
+(minus the redacted `correct`/`explanation` fields — see §4). The frontend
+fetches it with the same `getContent()` helper.
+
+Submitting answers is a custom endpoint, added in [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md):
+
+```
+POST /api/exercise-attempts
+{ "exerciseUuid": string, "sessionId": string, "answers": (string|null)[] }
+→ { "score": number, "total": number, "results": [{ correct, isCorrect, explanation }] }
+```
+
+The browser never calls this directly — it goes through a Next.js proxy route
+(`frontend/app/api/exercise-attempts/route.ts`), the same server-to-server
+shape as every other `/api/*` route in this project.
 
 ## 6. Frontend
 
@@ -62,14 +84,16 @@ No custom endpoint. The exercise page is served by the existing `HeadlessWebsite
 | File | Purpose |
 |---|---|
 | `frontend/components/content/exercise-view.tsx` | Client Component (`'use client'`); owns all quiz state |
+| `frontend/lib/anonymous-session.ts` | Generates/persists the anonymous `sessionId` (`localStorage`, no cookies) |
+| `frontend/app/api/exercise-attempts/route.ts` | Proxies submissions to the backend's `POST /api/exercise-attempts` |
 
 ### Modified files
 
 | File | Change |
 |---|---|
-| `frontend/components/content/types.ts` | Add `MultipleChoiceBlock`, `ExerciseBlock`, `ExerciseContent` types |
+| `frontend/components/content/types.ts` | Add `MultipleChoiceBlock`, `ExerciseContent`, `ExerciseGradeResult` types |
 | `frontend/components/content/learning-path-view.tsx` | Add "Test yourself →" link when `content.exercise` is set |
-| `frontend/app/[[...slug]]/page.tsx` | Add `case "exercise":` to the template switch |
+| `frontend/app/[[...slug]]/page.tsx` | Add `case "exercise":` to the template switch; pass the page's own `id` as `exerciseId` |
 
 ### Routing
 
@@ -80,11 +104,16 @@ No custom endpoint. The exercise page is served by the existing `HeadlessWebsite
 ```ts
 type QuizState = {
   answers: (string | null)[]  // indexed per question; null = unanswered
-  submitted: boolean
+  submitting: boolean
+  error: string | null
+  result: ExerciseGradeResult | null  // non-null once the server has graded the submission
 }
 ```
 
-State resets on page refresh. Accepted limitation for MVP.
+The in-progress answers (and the graded result) reset on page refresh — nothing
+about the *quiz UI* is persisted client-side. The submission itself is
+persisted server-side (an `Attempt` row per submit), but the frontend never
+reads that back.
 
 ### User flow
 
@@ -93,18 +122,19 @@ State resets on page refresh. Accepted limitation for MVP.
 3. User navigates to `/learning-paths/{slug}/exercise`.
 4. Breadcrumb / back link returns to the learning path (via optional `?path={slug}` query param).
 5. User answers each question and submits.
-6. Immediate per-question feedback shown: correct/incorrect + optional author explanation.
-7. Summary screen shows score.
+6. Frontend POSTs to `/api/exercise-attempts`; per-question feedback (correct/incorrect + optional author explanation) is rendered from the server's response.
+7. Summary screen shows the server-computed score.
 
 ## 7. Acceptance Criteria
 
 - Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field.
 - Exercise page displays title, optional intro, and all questions.
 - Each question shows four answer options; only one can be selected.
-- Submitting reveals which answers are correct and shows any explanations.
+- The public exercise JSON never includes `correct`/`explanation` before submission.
+- Submitting reveals which answers are correct and shows any explanations, as returned by `POST /api/exercise-attempts`.
 - "Test yourself →" link appears on the learning path page only when an exercise is linked.
 - Score summary is shown after submission.
-- Refreshing the page resets the quiz.
+- Refreshing the page resets the quiz UI (a new submission still creates a new server-side attempt; no history is shown back to the user).
 
 ## 8. Architecture Notes
 

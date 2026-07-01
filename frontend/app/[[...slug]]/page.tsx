@@ -168,6 +168,7 @@ export default async function Page({
       return (
         <ExerciseView
           content={data.content as unknown as ExerciseContent}
+          exerciseId={data.id}
           pathSlug={pathSlug}
         />
       )

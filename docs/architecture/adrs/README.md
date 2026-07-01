@@ -23,3 +23,5 @@ alternatives considered, and the trade-offs accepted.
 | [0008](0008-nextjs-caching-strategy.md) | Next.js Caching Strategy — Time-Based Revalidation | Accepted |
 | [0009](0009-vercel-frontend-deployment.md) | Deploy Next.js Frontend to Vercel | Accepted |
 | [0010](0010-security-hardening.md) | Security Hardening | Accepted |
+| [0011](0011-exercise-page-template.md) | Exercise Page Template for Interactive Quizzes | Accepted |
+| [0012](0012-assessment-bounded-context.md) | Assessment Bounded Context for Server-Graded Exercise Attempts | Accepted |
