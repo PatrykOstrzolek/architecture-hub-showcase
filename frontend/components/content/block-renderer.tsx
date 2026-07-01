@@ -40,18 +40,18 @@ function Block({ block }: { block: ArticleBlock }) {
     case "code":
       return (
         <figure className="my-2 space-y-2">
-          <div className="overflow-hidden rounded">
-            <div className="flex items-center gap-3 bg-[oklch(0.123_0.022_262)] px-4 py-2.5">
+          <div className="overflow-hidden rounded border border-border">
+            <div className="flex items-center gap-3 border-b border-border bg-[oklch(0.155_0.026_262)] px-4 py-2.5">
               <div className="flex gap-1.5">
-                <span className="size-2.5 rounded-full bg-white/15" />
-                <span className="size-2.5 rounded-full bg-white/15" />
-                <span className="size-2.5 rounded-full bg-white/15" />
+                <span className="size-2.5 rounded-full bg-white/25" />
+                <span className="size-2.5 rounded-full bg-white/25" />
+                <span className="size-2.5 rounded-full bg-white/25" />
               </div>
               <span className="font-mono text-xs text-primary/90">
                 {block.language || "code"}
               </span>
             </div>
-            <pre className="overflow-x-auto bg-[oklch(0.098_0.018_262)] p-5 font-mono text-sm leading-relaxed text-[oklch(0.853_0.025_237)]">
+            <pre className="overflow-x-auto bg-[oklch(0.125_0.022_262)] p-5 font-mono text-sm leading-relaxed text-[oklch(0.853_0.025_237)]">
               <code>{block.code}</code>
             </pre>
           </div>
