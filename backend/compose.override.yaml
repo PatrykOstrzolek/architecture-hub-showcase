@@ -11,6 +11,7 @@ services:
       PHP_OPCACHE_ENABLE: 1
     volumes:
       - .:/var/www/html
+      - ./docker/nginx/server-opts.d/sulu-homepage-json.conf:/etc/nginx/server-opts.d/sulu-homepage-json.conf:ro
 ###> symfony/mailer ###
   mailer:
     image: axllent/mailpit
