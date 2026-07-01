@@ -74,6 +74,11 @@ security:
         - { path: ^/admin$, roles: PUBLIC_ACCESS }
         - { path: ^/admin/$, roles: PUBLIC_ACCESS }
         - { path: ^/admin/p/, roles: PUBLIC_ACCESS }
+        # PagePreviewController guards this itself with a bearer secret
+        # (App\Controller\Website\PagePreviewController) — same reasoning as
+        # /admin/p/ above: it's meant to be called unauthenticated (by the
+        # Next.js frontend), not by a logged-in Sulu admin session.
+        - { path: ^/admin/api/preview/, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_USER }
 
 when@test:

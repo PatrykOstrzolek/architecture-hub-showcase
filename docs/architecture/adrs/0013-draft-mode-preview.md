@@ -21,7 +21,7 @@ publishing.
 Use Next.js **Draft Mode**, reading draft-stage content from a new,
 secret-protected backend endpoint — not a custom Sulu `PreviewRendererInterface`.
 
-*   **Backend**: `GET /api/preview/pages?path=...&locale=...`
+*   **Backend**: `GET /admin/api/preview/pages?path=...&locale=...`
     (`App\Controller\Website\PagePreviewController`), guarded by a
     `PREVIEW_SECRET` bearer token. It resolves the path to a page via
     `RouteRepositoryInterface`, loads the page via `PageRepositoryInterface`,
@@ -29,7 +29,8 @@ secret-protected backend endpoint — not a custom Sulu `PreviewRendererInterfac
     `ContentManagerInterface::resolve()` (`stage: DimensionContentInterface::STAGE_DRAFT`)
     and serializes it with the same `sulu_headless.structure_resolver` service
     `HeadlessWebsiteController` uses for the public `.json` route — so draft
-    and live responses are shape-identical.
+    and live responses are shape-identical. Lives under `/admin/api/...`, not
+    `/api/...` — see "Production incident" below for why.
 *   **Frontend**: `GET /api/preview?secret=...&path=...` enables Draft Mode
     (`draftMode().enable()`) and redirects to `path`. `GET /api/preview/disable`
     turns it back off. `lib/sulu.ts`'s `getContent()` checks
@@ -68,6 +69,54 @@ only reflecting the last **Save**, not every keystroke.
     template a real-frontend preview for free.
 *   Editors get a real one-click "open in the real frontend" action today, via
     the existing Share > Generate link button — no `npm`/webpack step needed.
+
+### Production incident: `/api/preview/pages` 500'd, worked fine locally
+
+First deploy of `PagePreviewController` used `/api/preview/pages`. It worked
+in every local test (curl, browser, full end-to-end) and passed CI, but
+500'd in production on every request, before the controller's own logic ever
+ran (same 500 regardless of headers/query params). Root cause, found by
+reading `public/index.php`:
+
+1.  Sulu context is decided purely by request path —
+    `preg_match('/^\/admin(\/|$)/', REQUEST_URI)` picks `admin` context,
+    anything else gets `website` context. **Not** by hostname, despite
+    `admin_domain`/`api_domain` being two separate Ansible-templated nginx
+    vhosts proxying to the same upstream.
+2.  For `website` context, `public/index.php` wraps the kernel in
+    `$kernel->getHttpCache()` (`SuluHttpCache`, FOSHttpCacheBundle) whenever
+    `APP_ENV !== 'dev'`. Local dev never hits this — `APP_ENV=dev` skips the
+    wrap unconditionally — so the bug was invisible in every local test no
+    matter how thorough.
+3.  `/api/preview/pages` isn't a webspace/portal-matched Sulu content route
+    (unlike `.json`, which goes through `HeadlessWebsiteController`) — it's a
+    plain `#[Route]` controller. Something in that combination (custom route
+    + website context + the reverse-proxy cache kernel wrapper) throws.
+    Without production log/SSH access this session, the *exact* line wasn't
+    isolated — but the fix sidesteps needing to know it.
+
+**Fix**: moved the route to `/admin/api/preview/pages`. Any `/admin`-prefixed
+path always gets `admin` context, which is never wrapped in `SuluHttpCache` —
+matches why `PreviewLinkRedirectController` (`/admin/p/{token}`) worked
+correctly from the start, and mirrors Sulu's own convention (its
+preview-link REST API already lives at `/admin/api/preview-links/*` for
+what's presumably the same reason). This required two more changes to
+actually reach the controller:
+*   `security.yaml`'s `access_control` requires `ROLE_USER` for `^/admin` by
+    default — added a `PUBLIC_ACCESS` carve-out for
+    `^/admin/api/preview/`, the same pattern already used for `^/admin/p/`.
+    The controller still guards itself with the bearer secret; this just lets
+    that check run instead of the request dying at the firewall first.
+*   The `api_domain` nginx vhost's allowlist (`\.json$|^/(api|media)`) didn't
+    include `/admin/*` at all (by design — `admin_domain` is a separate
+    vhost). Added a narrow `^/admin/api/preview/` carve-out to `api_domain`
+    specifically, rather than routing this one call through `admin_domain`
+    instead, so the frontend keeps using a single `SULU_BASE_URL`.
+
+**Lesson**: `APP_ENV=dev` disables a whole kernel-wrapping layer that's
+always active in prod. Local testing — however thorough — cannot exercise
+that layer at all; only a real deploy (or intentionally reproducing
+`APP_ENV=prod` locally) can.
 
 ### Negative / Risks
 

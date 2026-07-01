@@ -269,7 +269,10 @@ async function getDraftContent<TContent>(
   const params = new URLSearchParams({ path, locale: "en" })
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}/api/preview/pages?${params}`, {
+    // /admin/api/... on purpose: the plain /api/... path goes through Sulu's
+    // reverse-proxy cache kernel in production and 500s there — see the
+    // PagePreviewController docblock and ADR-0013.
+    res = await fetch(`${BASE_URL}/admin/api/preview/pages?${params}`, {
       headers: { Authorization: `Bearer ${PREVIEW_SECRET}` },
       cache: "no-store",
     })

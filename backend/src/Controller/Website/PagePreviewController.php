@@ -21,6 +21,15 @@ use Symfony\Component\Routing\Attribute\Route;
  * Draft Mode. Unlike the public route, this always resolves the DRAFT dimension
  * content — it must stay behind the bearer secret check, since draft content can
  * include unpublished text. See ADR-0013.
+ *
+ * Deliberately under `/admin/api/...`, not `/api/...`: any request whose path
+ * matches `/admin(/|$)` gets Sulu's ADMIN kernel context (see public/index.php),
+ * which — unlike the WEBSITE context — is never wrapped in SuluHttpCache's
+ * reverse-proxy kernel in prod. A plain `/api/...` route hit this reverse-proxy
+ * layer and 500'd in production despite working locally (APP_ENV=dev never
+ * wraps the kernel at all, so the bug was invisible there). Matches the
+ * existing convention: Sulu's own preview-link REST API lives under
+ * `/admin/api/preview-links/*` for the same reason.
  */
 readonly class PagePreviewController
 {
@@ -33,7 +42,7 @@ readonly class PagePreviewController
     ) {
     }
 
-    #[Route('/api/preview/pages', name: 'app.api.preview_pages', methods: ['GET'])]
+    #[Route('/admin/api/preview/pages', name: 'app.admin_api.preview_pages', methods: ['GET'])]
     public function __invoke(Request $request): JsonResponse
     {
         if (!$this->isAuthorized($request)) {
