@@ -43,7 +43,7 @@ Key findings driving this ADR:
 - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-- `Content-Security-Policy` (baseline; `unsafe-inline` required by Next.js hydration — upgrade to nonces if stricter CSP is needed)
+- `Content-Security-Policy` (baseline; `unsafe-inline` required by Next.js hydration — upgrade to nonces if stricter CSP is needed). `script-src` additionally allows `unsafe-eval` in `development` only (Next.js dev/HMR requires it); production is unaffected.
 
 **nginx backend** (`ansible/roles/nginx/templates/app.conf.j2`):
 - API vhost (`api.*`): `nosniff`, Referrer-Policy, Permissions-Policy, `Cross-Origin-Resource-Policy: same-origin`, and a strict `CSP: default-src 'none'` (pure JSON API).
