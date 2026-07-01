@@ -36,7 +36,7 @@ final class ExerciseAttemptControllerTest extends TestCase
             new GradeResult(1, 2, [
                 ['correct' => 'a', 'isCorrect' => true, 'explanation' => null],
                 ['correct' => 'b', 'isCorrect' => false, 'explanation' => 'because b'],
-            ])
+            ]),
         );
 
         $response = $this->controller->postAction($this->request([
@@ -58,7 +58,7 @@ final class ExerciseAttemptControllerTest extends TestCase
     public function testUnknownExerciseReturns404(): void
     {
         $this->submitAttemptService->method('submit')->willThrowException(
-            new ExerciseNotFoundException(self::VALID_UUID)
+            new ExerciseNotFoundException(self::VALID_UUID),
         );
 
         $response = $this->controller->postAction($this->request([

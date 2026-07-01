@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get("path")
 
   if (!PREVIEW_SECRET || !safeCompare(secret, PREVIEW_SECRET)) {
-    return NextResponse.json({ error: "Invalid preview token" }, { status: 401 })
+    return NextResponse.json(
+      { error: "Invalid preview token" },
+      { status: 401 }
+    )
   }
   if (!path || !path.startsWith("/")) {
     return NextResponse.json(

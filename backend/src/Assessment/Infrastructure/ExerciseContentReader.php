@@ -52,7 +52,7 @@ final readonly class ExerciseContentReader
                 'correct' => (string) ($question['correct'] ?? ''),
                 'explanation' => $question['explanation'] ?? null,
             ],
-            $questions
+            $questions,
         ));
     }
 }
