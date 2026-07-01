@@ -27,6 +27,7 @@ services:
       SEAL_DSN: loupe:///var/www/html/var/indexes
       NEXT_REVALIDATE_URL: ${NEXT_REVALIDATE_URL}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      PREVIEW_SECRET: ${PREVIEW_SECRET}
     mem_limit: 768m
     volumes:
       - uploads:/var/www/html/public/uploads

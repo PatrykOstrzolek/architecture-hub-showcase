@@ -27,3 +27,7 @@ services:
         arguments:
             $nextRevalidateUrl: '%env(default::NEXT_REVALIDATE_URL)%'
             $nextRevalidateSecret: '%env(default::REVALIDATE_SECRET)%'
+
+    App\Controller\Website\PagePreviewController:
+        arguments:
+            $previewSecret: '%env(default::PREVIEW_SECRET)%'

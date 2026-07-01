@@ -21,7 +21,10 @@
  * See docs/architecture/adrs/0003-headless-content-delivery.md
  */
 
+import { draftMode } from "next/headers"
+
 const BASE_URL = process.env.SULU_BASE_URL ?? "http://localhost:8000"
+const PREVIEW_SECRET = process.env.PREVIEW_SECRET
 
 /** Revalidation window (seconds) for cached content fetches. */
 const REVALIDATE_SECONDS = 60
@@ -236,10 +239,19 @@ async function suluFetch<T>(
  * Fetch a page or article rendered as JSON by the HeadlessWebsiteController.
  * `path` is the content's resource locator, e.g. "/" or "/articles/cap-theorem".
  * Returns null when no content is published at that path.
+ *
+ * When Next.js Draft Mode is enabled (via /api/preview, see ADR-0013), this
+ * instead reads draft-stage content from the backend's preview endpoint —
+ * bypassing the publish requirement and any response caching.
  */
 export async function getContent<TContent = Record<string, unknown>>(
   path: string
 ): Promise<SuluContent<TContent> | null> {
+  const { isEnabled: isPreview } = await draftMode()
+  if (isPreview) {
+    return getDraftContent<TContent>(path)
+  }
+
   try {
     return await suluFetch<SuluContent<TContent>>(`${path}.json`)
   } catch (err) {
@@ -247,6 +259,26 @@ export async function getContent<TContent = Record<string, unknown>>(
     if (err instanceof SuluUnavailableError) return null
     throw err
   }
+}
+
+async function getDraftContent<TContent>(
+  path: string
+): Promise<SuluContent<TContent> | null> {
+  if (!PREVIEW_SECRET) return null
+
+  const params = new URLSearchParams({ path, locale: "en" })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/api/preview/pages?${params}`, {
+      headers: { Authorization: `Bearer ${PREVIEW_SECRET}` },
+      cache: "no-store",
+    })
+  } catch {
+    return null
+  }
+
+  if (!res.ok) return null
+  return res.json() as Promise<SuluContent<TContent>>
 }
 
 /** Fetch a navigation tree by its Sulu navigation context key. */

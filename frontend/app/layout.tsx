@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { DraftModeBanner } from "@/components/draft-mode-banner"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <div className="flex min-h-svh flex-col">
+            <DraftModeBanner />
             <SiteHeader />
             <main className="mx-auto w-full max-w-5xl flex-1">{children}</main>
             <SiteFooter />
