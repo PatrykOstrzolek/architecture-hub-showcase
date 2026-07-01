@@ -21,6 +21,7 @@
     src: /etc/nginx/sites-available/architecture-hub
     dest: /etc/nginx/sites-enabled/architecture-hub
     state: link
+    force: true
   notify: Reload nginx
 
 - name: Enable and start nginx
