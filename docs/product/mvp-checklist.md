@@ -33,7 +33,7 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 
 ## Exercises (`features/exercises.md`)
 
-- [ ] Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field
+- [x] Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field
 - [x] Exercise page displays title, optional intro, and all questions
 - [x] Each question shows four answer options; only one can be selected
 - [x] Submitting reveals which answers are correct and shows any explanations
@@ -74,4 +74,4 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 | 2 | ~~Author pages + listing~~ — done via `AuthorPageFixture` + `authors` template | ~~content task~~ |
 | 3 | ~~Authors in autocomplete~~ — done, deduped by URL | ~~`features/search.md §3.4`~~ |
 | 4 | ~~Nav driven by Sulu navigation API~~ — done; `SiteHeader` is async RSC calling `getNavigation("main")` with static fallback; fixtures seed nav contexts; ADR 0005 | ~~`site-header.tsx`~~ |
-| 5 | Interactive Exercises — template, fixture, and frontend view built (ADR 0011); real quiz content authored for all 3 learning paths and verified end-to-end (frontend + `.json`). Only the Sulu-admin authoring flow itself (creating/editing an exercise page through the UI, not via fixture) is unverified | `features/exercises.md` |
+| 5 | ~~Interactive Exercises~~ — template, fixture with real quiz content, frontend view, and Sulu-admin authoring flow all built and verified (ADR 0011) | ~~`features/exercises.md`~~ |
