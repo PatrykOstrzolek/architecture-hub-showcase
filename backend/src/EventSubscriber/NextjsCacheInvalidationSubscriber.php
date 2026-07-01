@@ -65,7 +65,6 @@ class NextjsCacheInvalidationSubscriber implements EventSubscriberInterface
         try {
             $response = $this->httpClient->request('POST', \rtrim($this->nextRevalidateUrl, '/') . '/api/revalidate', [
                 'headers' => ['Authorization' => 'Bearer ' . $this->nextRevalidateSecret],
-                'connect_timeout' => 5,
                 'timeout' => 5,
                 'max_duration' => 5,
             ]);

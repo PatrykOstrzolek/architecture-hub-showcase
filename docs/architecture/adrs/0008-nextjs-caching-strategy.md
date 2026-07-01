@@ -80,7 +80,8 @@ Two complementary triggers both POST to `{NEXT_REVALIDATE_URL}/api/revalidate`:
 
 1. **Sulu publish event (Phase 2)** — `NextjsCacheInvalidationSubscriber` subscribes to
    `PageWorkflowTransitionAppliedEvent` and `ArticleWorkflowTransitionAppliedEvent`. Fires
-   synchronously; bounded by `connect_timeout`, `timeout`, and `max_duration` (all 5 s).
+   synchronously; bounded by `timeout` and `max_duration` (both 5 s — `connect_timeout` is not
+   a valid Symfony HttpClient option and was removed after it caused every call to fail).
    Failures are logged and do not abort the publish action. The 60 s TTL acts as a silent
    fallback if the call fails.
 
