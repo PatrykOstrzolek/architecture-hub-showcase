@@ -34,12 +34,12 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 ## Exercises (`features/exercises.md`)
 
 - [ ] Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field
-- [ ] Exercise page displays title, optional intro, and all questions
-- [ ] Each question shows four answer options; only one can be selected
-- [ ] Submitting reveals which answers are correct and shows any explanations
-- [ ] "Test yourself →" link appears on the learning path page only when an exercise is linked
-- [ ] Score summary is shown after submission
-- [ ] Refreshing the page resets the quiz
+- [x] Exercise page displays title, optional intro, and all questions
+- [x] Each question shows four answer options; only one can be selected
+- [x] Submitting reveals which answers are correct and shows any explanations
+- [x] "Test yourself →" link appears on the learning path page only when an exercise is linked
+- [x] Score summary is shown after submission
+- [x] Refreshing the page resets the quiz
 
 ## Search (`features/search.md`)
 
@@ -74,4 +74,4 @@ Legend: ✅ done · ❌ not started · ⚠️ partial / planned
 | 2 | ~~Author pages + listing~~ — done via `AuthorPageFixture` + `authors` template | ~~content task~~ |
 | 3 | ~~Authors in autocomplete~~ — done, deduped by URL | ~~`features/search.md §3.4`~~ |
 | 4 | ~~Nav driven by Sulu navigation API~~ — done; `SiteHeader` is async RSC calling `getNavigation("main")` with static fallback; fixtures seed nav contexts; ADR 0005 | ~~`site-header.tsx`~~ |
-| 5 | Interactive Exercises — template, fixture, and frontend view built (ADR 0011); fixture question copy is still placeholder (`TODO:` strings) pending real content | `features/exercises.md` |
+| 5 | Interactive Exercises — template, fixture, and frontend view built (ADR 0011); real quiz content authored for all 3 learning paths and verified end-to-end (frontend + `.json`). Only the Sulu-admin authoring flow itself (creating/editing an exercise page through the UI, not via fixture) is unverified | `features/exercises.md` |
