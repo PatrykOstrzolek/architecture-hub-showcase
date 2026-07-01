@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{# Fallback HTML view — the public experience is rendered by Next.js against the
+   headless JSON (`/.json`); this view only needs to stay valid. #}
+{% block content %}
+    <h1>{{ content.title }}</h1>
+
+    {% if content.authors %}
+        <ul>
+            {% for author in content.authors %}
+                <li><a href="{{ author.url }}">{{ author.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
