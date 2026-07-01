@@ -25,6 +25,8 @@ services:
       DEFAULT_URI: ${DEFAULT_URI}
       LOCK_DSN: flock
       SEAL_DSN: loupe:///var/www/html/var/indexes
+      NEXT_REVALIDATE_URL: ${NEXT_REVALIDATE_URL}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
     mem_limit: 768m
     volumes:
       - uploads:/var/www/html/public/uploads
