@@ -1,0 +1,50 @@
+name: CD — Infra
+
+# Manual, deliberate trigger only — unlike cd-backend/cd-frontend, infra
+# changes (nginx vhosts, Docker install, base packages) don't run on every
+# push to main. Run from the Actions tab (or `gh workflow run cd-infra.yml`)
+# after merging a change under ansible/roles/{common,docker,nginx}.
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Ansible tags to limit the run to (e.g. "nginx"). Leave empty to run common+docker+nginx.'
+        required: false
+        default: ""
+
+jobs:
+  provision:
+    name: Provision server via Ansible
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Ansible
+        run: pip install "ansible-core==2.17.*"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Write Ansible vault password
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: printf '%s' "$VAULT_PASSWORD" > ~/.vault_pass
+
+      - name: Write Ansible vault file
+        env:
+          VAULT_FILE: ${{ secrets.ANSIBLE_VAULT_FILE }}
+        run: echo "$VAULT_FILE" > ansible/group_vars/all/vault.yml
+
+      - name: Run provision playbook
+        run: >
+          ansible-playbook playbooks/provision.yml
+          --inventory inventory/production.ini
+          --vault-password-file ~/.vault_pass
+          --extra-vars "ansible_host=${{ secrets.PRODUCTION_HOST }}"
+          ${{ github.event.inputs.tags != '' && format('--tags {0}', github.event.inputs.tags) || '' }}
+        working-directory: ${{ github.workspace }}/ansible
