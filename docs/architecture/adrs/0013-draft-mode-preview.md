@@ -220,9 +220,15 @@ real value, which it did throughout this feature's development.
     cache flush — no data exposure either direction). Wired through
     `backend/.env`, `frontend/.env.example`, `ansible/group_vars/vault.yml.example`,
     `ansible/roles/app/templates/.env.j2`, and `docker-compose.prod.yml`,
-    mirroring the existing `REVALIDATE_SECRET` plumbing. The real value still
-    needs to be set in the Ansible vault and the Vercel project's environment
-    variables — not something this change can do on its own.
+    mirroring the existing `REVALIDATE_SECRET` plumbing. The real value is now
+    set in both the Ansible vault (`vault_preview_secret`) and Vercel's
+    Production environment variables, and the full flow — Sulu's "Generate
+    link" → `/admin/p/{token}` → `/admin/api/preview/pages` →
+    `/api/preview` → Draft Mode — has been verified end-to-end against the
+    real production deployment. Note Vercel serverless functions don't pick
+    up env var changes on already-running deployments — a redeploy
+    (`vercel --prod`) was required after setting `PREVIEW_SECRET` for it to
+    actually take effect, which is why the first post-set test still 401'd.
 *   **Pages only.** `PagePreviewController` resolves `PageInterface::RESOURCE_KEY`
     routes; articles aren't covered. Extendable later by branching on
     `Route::getResourceKey()` if needed — not built now since nothing
