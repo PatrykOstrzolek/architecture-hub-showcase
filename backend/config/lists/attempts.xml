@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<list xmlns="http://schemas.sulu.io/list-builder/list">
+    <key>attempts</key>
+
+    <properties>
+        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id" />
+        <property name="exerciseUuid" visibility="always" searchability="yes" translation="Exercise" />
+        <property name="sessionId" visibility="yes" searchability="yes" translation="Session" />
+        <property name="score" visibility="always" searchability="no" translation="Score" />
+        <property name="total" visibility="always" searchability="no" translation="Total" />
+        <property name="createdAt" visibility="always" searchability="no" translation="Submitted at" />
+    </properties>
+</list>

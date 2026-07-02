@@ -32,6 +32,8 @@ class AssessmentAdmin extends Admin
     public const QUESTION_SET_ADD_FORM_VIEW = 'app_assessment.question_set_add_form';
     public const QUESTION_SET_EDIT_FORM_VIEW = 'app_assessment.question_set_edit_form';
 
+    public const ATTEMPT_LIST_VIEW = 'app_assessment.attempt_list';
+
     public function __construct(private ViewBuilderFactoryInterface $viewBuilderFactory)
     {
     }
@@ -55,6 +57,11 @@ class AssessmentAdmin extends Admin
         $questionSets->setPosition(20);
         $questionSets->setView(self::QUESTION_SET_LIST_VIEW);
         $assessment->addChild($questionSets);
+
+        $attempts = new NavigationItem('Attempts');
+        $attempts->setPosition(30);
+        $attempts->setView(self::ATTEMPT_LIST_VIEW);
+        $assessment->addChild($attempts);
 
         $navigationItemCollection->add($assessment);
     }
@@ -92,6 +99,17 @@ class AssessmentAdmin extends Admin
             editFormView: self::QUESTION_SET_EDIT_FORM_VIEW,
             listToolbarActions: $listToolbarActions,
             formToolbarActions: $formToolbarActions,
+        );
+
+        // Read-only: no add/edit form views. Attempts are written once, by
+        // the grading flow (ADR-0012), never authored or edited in admin.
+        $viewCollection->add(
+            $this->viewBuilderFactory->createListViewBuilder(self::ATTEMPT_LIST_VIEW, '/attempts')
+                ->setResourceKey('attempts')
+                ->setListKey('attempts')
+                ->setTitle('Attempts')
+                ->addListAdapters(['table'])
+                ->addToolbarActions([new ToolbarAction('sulu_admin.delete')]),
         );
     }
 

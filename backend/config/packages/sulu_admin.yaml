@@ -21,6 +21,14 @@ sulu_admin:
             routes:
                 list: app.admin_api.question_sets.list
                 detail: app.admin_api.question_sets.get
+        attempts:
+            routes:
+                list: app.admin_api.attempts.list
+                # No GET-by-id endpoint (read-only list, no detail view) —
+                # this just gives the delete toolbar action a /{id} URL to
+                # generate, since ResourceRequester.delete() resolves
+                # through the "detail" route regardless of HTTP verb.
+                detail: app.admin_api.attempts.delete
     # Bridge content types for the QuestionSet/Question entities — see
     # ADR-0014. Both are Sulu's generic, already-shipped selection field
     # types (multi-select-with-order / single-select), configured purely

@@ -75,4 +75,9 @@ class Attempt
     {
         return $this->total;
     }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 }

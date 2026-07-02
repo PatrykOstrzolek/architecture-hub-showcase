@@ -14,9 +14,28 @@ final readonly class DoctrineAttemptRepository implements AttemptRepositoryInter
     {
     }
 
+    public function find(int $id): ?Attempt
+    {
+        return $this->em->find(Attempt::class, $id);
+    }
+
+    /**
+     * @return list<Attempt>
+     */
+    public function findAll(): array
+    {
+        return $this->em->getRepository(Attempt::class)->findBy([], ['createdAt' => 'DESC']);
+    }
+
     public function save(Attempt $attempt): void
     {
         $this->em->persist($attempt);
+        $this->em->flush();
+    }
+
+    public function remove(Attempt $attempt): void
+    {
+        $this->em->remove($attempt);
         $this->em->flush();
     }
 }
