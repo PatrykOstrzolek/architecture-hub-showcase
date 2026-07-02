@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<form xmlns="http://schemas.sulu.io/template/template"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/form-1.0.xsd"
+>
+    <key>question_set_details</key>
+
+    <properties>
+        <property name="title" type="text_line" mandatory="true">
+            <meta>
+                <title lang="en">Title</title>
+                <info_text lang="en">Admin-facing label only — never shown to end users.</info_text>
+            </meta>
+            <params>
+                <param name="headline" value="true"/>
+            </params>
+        </property>
+
+        <property name="questionIds" type="question_selection" mandatory="false">
+            <meta>
+                <title lang="en">Questions</title>
+                <info_text lang="en">Pick and order existing questions — the same question can be reused across multiple question sets.</info_text>
+            </meta>
+        </property>
+    </properties>
+</form>

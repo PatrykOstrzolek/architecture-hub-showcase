@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<form xmlns="http://schemas.sulu.io/template/template"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/form-1.0.xsd"
+>
+    <key>question_details</key>
+
+    <properties>
+        <property name="text" type="text_line" mandatory="true">
+            <meta>
+                <title lang="en">Question</title>
+            </meta>
+            <params>
+                <param name="headline" value="true"/>
+            </params>
+        </property>
+
+        <property name="explanation" type="text_area" mandatory="false">
+            <meta>
+                <title lang="en">Explanation</title>
+                <info_text lang="en">Shown to the user only after they answer.</info_text>
+            </meta>
+        </property>
+
+        <block name="options" default-type="default" minOccurs="2" maxOccurs="8">
+            <meta>
+                <title lang="en">Options</title>
+            </meta>
+
+            <types>
+                <type name="default">
+                    <properties>
+                        <property name="text" type="text_line" mandatory="true" colspan="9">
+                            <meta>
+                                <title lang="en">Option text</title>
+                            </meta>
+                        </property>
+
+                        <property name="isCorrect" type="checkbox" mandatory="false" colspan="3">
+                            <meta>
+                                <title lang="en">Correct</title>
+                            </meta>
+                        </property>
+                    </properties>
+                </type>
+            </types>
+        </block>
+    </properties>
+</form>

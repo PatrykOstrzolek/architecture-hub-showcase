@@ -24,7 +24,7 @@ class Attempt
     private string $sessionId;
 
     /**
-     * @var list<string|null>
+     * @var list<list<int|null>>
      */
     #[ORM\Column(type: 'json')]
     private array $answers;
@@ -39,7 +39,7 @@ class Attempt
     private \DateTimeImmutable $createdAt;
 
     /**
-     * @param list<string|null> $answers
+     * @param list<list<int|null>> $answers
      */
     public function __construct(string $exerciseUuid, string $sessionId, array $answers, int $score, int $total)
     {

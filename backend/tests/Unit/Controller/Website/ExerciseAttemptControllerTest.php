@@ -34,15 +34,15 @@ final class ExerciseAttemptControllerTest extends TestCase
     {
         $this->submitAttemptService->method('submit')->willReturn(
             new GradeResult(1, 2, [
-                ['correct' => 'a', 'isCorrect' => true, 'explanation' => null],
-                ['correct' => 'b', 'isCorrect' => false, 'explanation' => 'because b'],
+                ['correctOptionIds' => [1], 'submittedOptionIds' => [1], 'isCorrect' => true, 'explanation' => null],
+                ['correctOptionIds' => [2], 'submittedOptionIds' => [3], 'isCorrect' => false, 'explanation' => 'because b'],
             ]),
         );
 
         $response = $this->controller->postAction($this->request([
             'exerciseUuid' => self::VALID_UUID,
             'sessionId' => self::VALID_SESSION,
-            'answers' => ['a', 'c'],
+            'answers' => [[1], [3]],
         ]));
 
         /** @var array{score: mixed, total: mixed, results: list<mixed>} $body */
@@ -83,27 +83,54 @@ final class ExerciseAttemptControllerTest extends TestCase
         self::assertSame(400, $response->getStatusCode());
     }
 
-    public function testAnswersWithInvalidOptionReturns400(): void
+    public function testAnswersWithNonIntegerOptionIdReturns400(): void
     {
         $this->submitAttemptService->expects(self::never())->method('submit');
 
         $response = $this->controller->postAction($this->request([
             'exerciseUuid' => self::VALID_UUID,
             'sessionId' => self::VALID_SESSION,
-            'answers' => ['z'],
+            'answers' => [['not-an-id']],
         ]));
 
         self::assertSame(400, $response->getStatusCode());
     }
 
-    public function testTooManyAnswersReturns400(): void
+    public function testAnswersWithFlatListInsteadOfNestedListsReturns400(): void
     {
         $this->submitAttemptService->expects(self::never())->method('submit');
 
         $response = $this->controller->postAction($this->request([
             'exerciseUuid' => self::VALID_UUID,
             'sessionId' => self::VALID_SESSION,
-            'answers' => \array_fill(0, 21, 'a'),
+            // Each question's answer must be a list of option ids, not a bare id.
+            'answers' => [1, 2],
+        ]));
+
+        self::assertSame(400, $response->getStatusCode());
+    }
+
+    public function testTooManyQuestionsReturns400(): void
+    {
+        $this->submitAttemptService->expects(self::never())->method('submit');
+
+        $response = $this->controller->postAction($this->request([
+            'exerciseUuid' => self::VALID_UUID,
+            'sessionId' => self::VALID_SESSION,
+            'answers' => \array_fill(0, 51, [1]),
+        ]));
+
+        self::assertSame(400, $response->getStatusCode());
+    }
+
+    public function testTooManySelectedOptionsInOneQuestionReturns400(): void
+    {
+        $this->submitAttemptService->expects(self::never())->method('submit');
+
+        $response = $this->controller->postAction($this->request([
+            'exerciseUuid' => self::VALID_UUID,
+            'sessionId' => self::VALID_SESSION,
+            'answers' => [\array_fill(0, 21, 1)],
         ]));
 
         self::assertSame(400, $response->getStatusCode());

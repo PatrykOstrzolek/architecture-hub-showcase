@@ -6,3 +6,51 @@ sulu_admin:
     lists:
         directories:
             - "%kernel.project_dir%/config/lists"
+    # Maps each custom resourceKey to the REST route names the Admin SPA's
+    # ResourceRequester uses to build API URLs — separate from both the
+    # client-side view/route registration (AssessmentAdmin::configureViews)
+    # and the field_type_options picker config below. Without this, the
+    # Admin JS throws "There are no routes for the resourceKey ..." even
+    # though the views/REST endpoints both already exist. See ADR-0014.
+    resources:
+        questions:
+            routes:
+                list: app.admin_api.questions.list
+                detail: app.admin_api.questions.get
+        question_sets:
+            routes:
+                list: app.admin_api.question_sets.list
+                detail: app.admin_api.question_sets.get
+    # Bridge content types for the QuestionSet/Question entities — see
+    # ADR-0014. Both are Sulu's generic, already-shipped selection field
+    # types (multi-select-with-order / single-select), configured purely
+    # via YAML — no new Sulu Admin React code or webpack build needed.
+    field_type_options:
+        selection:
+            # Multi, ordered — used on QuestionSet's own form to pick and
+            # order existing (reusable) Questions.
+            question_selection:
+                default_type: list_overlay
+                resource_key: questions
+                types:
+                    list_overlay:
+                        adapter: table
+                        list_key: questions
+                        display_properties: [text]
+                        icon: fa-question-circle
+                        label: "Selected questions"
+                        overlay_title: "Select questions"
+        single_selection:
+            # Single — used on any page template (e.g. exercise.xml) to
+            # reference one QuestionSet by id.
+            single_question_set_selection:
+                default_type: list_overlay
+                resource_key: question_sets
+                types:
+                    list_overlay:
+                        adapter: table
+                        list_key: question_sets
+                        display_properties: [title]
+                        icon: fa-list-alt
+                        empty_text: "No question set selected"
+                        overlay_title: "Select a question set"

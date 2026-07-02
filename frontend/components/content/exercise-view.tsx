@@ -9,25 +9,16 @@ import { Button } from "@/components/ui/button"
 import type {
   ExerciseContent,
   ExerciseGradeResult,
-  MultipleChoiceBlock,
+  ExerciseQuestion,
 } from "./types"
 
 type QuizState = {
-  answers: (string | null)[]
+  /** Per question, the set of selected option ids — empty array = unanswered. */
+  answers: number[][]
   submitting: boolean
   error: string | null
   result: ExerciseGradeResult | null
 }
-
-const OPTIONS: Array<{
-  key: "a" | "b" | "c" | "d"
-  field: keyof MultipleChoiceBlock
-}> = [
-  { key: "a", field: "option_a" },
-  { key: "b", field: "option_b" },
-  { key: "c", field: "option_c" },
-  { key: "d", field: "option_d" },
-]
 
 export function ExerciseView({
   content,
@@ -38,23 +29,26 @@ export function ExerciseView({
   exerciseId: string
   pathSlug?: string
 }) {
-  const questions = content.questions ?? []
+  const questions = content.questionSet?.questions ?? []
   const [state, setState] = useState<QuizState>({
-    answers: questions.map(() => null),
+    answers: questions.map(() => []),
     submitting: false,
     error: null,
     result: null,
   })
 
   const allAnswered =
-    questions.length > 0 && state.answers.every((a) => a !== null)
+    questions.length > 0 && state.answers.every((a) => a.length > 0)
   const submitted = state.result !== null
 
-  function selectAnswer(index: number, option: string) {
+  function toggleOption(index: number, optionId: number) {
     if (submitted) return
     setState((s) => {
       const answers = [...s.answers]
-      answers[index] = option
+      const current = answers[index] ?? []
+      answers[index] = current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId]
       return { ...s, answers }
     })
   }
@@ -112,12 +106,12 @@ export function ExerciseView({
       <div className="space-y-10">
         {questions.map((question, i) => (
           <QuestionCard
-            key={i}
+            key={question.id}
             index={i}
             question={question}
-            selected={state.answers[i]}
+            selected={state.answers[i] ?? []}
             result={state.result?.results[i] ?? null}
-            onSelect={(option) => selectAnswer(i, option)}
+            onToggle={(optionId) => toggleOption(i, optionId)}
           />
         ))}
       </div>
@@ -152,59 +146,61 @@ function QuestionCard({
   question,
   selected,
   result,
-  onSelect,
+  onToggle,
 }: {
   index: number
-  question: MultipleChoiceBlock
-  selected: string | null
+  question: ExerciseQuestion
+  selected: number[]
   result: ExerciseGradeResult["results"][number] | null
-  onSelect: (option: string) => void
+  onToggle: (optionId: number) => void
 }) {
   const submitted = result !== null
 
   return (
     <fieldset className="space-y-3">
       <legend className="font-medium">
-        {index + 1}. {question.question}
+        {index + 1}. {question.text}
       </legend>
       <div className="space-y-2">
-        {OPTIONS.map(({ key, field }) => {
-          const isSelected = selected === key
-          const isCorrect = submitted && key === result.correct
+        {question.options.map((option) => {
+          const isSelected = selected.includes(option.id)
+          const isCorrectOption =
+            submitted && result.correctOptionIds.includes(option.id)
 
           return (
             <label
-              key={key}
+              key={option.id}
               className={cn(
                 "flex cursor-pointer items-center justify-between gap-3 rounded border p-3 transition-colors",
                 submitted && "cursor-default",
                 !submitted && isSelected && "border-primary bg-primary/5",
                 !submitted && !isSelected && "hover:bg-accent",
-                submitted && isCorrect && "border-emerald-500 bg-emerald-500/8",
+                submitted &&
+                  isCorrectOption &&
+                  "border-emerald-500 bg-emerald-500/8",
                 submitted &&
                   isSelected &&
-                  !isCorrect &&
+                  !isCorrectOption &&
                   "border-red-500 bg-red-500/8"
               )}
             >
               <span className="flex items-center gap-3">
                 <input
-                  type="radio"
-                  name={`question-${index}`}
+                  type="checkbox"
                   checked={isSelected}
                   disabled={submitted}
-                  onChange={() => onSelect(key)}
+                  onChange={() => onToggle(option.id)}
                   className="shrink-0"
                 />
-                <span>{question[field] as string}</span>
+                <span>{option.text}</span>
               </span>
-              {submitted && isCorrect ? (
+              {submitted && isCorrectOption ? (
                 <CheckCircle
                   weight="fill"
                   className="size-4 shrink-0 text-emerald-500"
                 />
               ) : null}
-              {submitted && isSelected && !isCorrect ? (
+              {submitted && isSelected && !isCorrectOption ? (
                 <XCircle
                   weight="fill"
                   className="size-4 shrink-0 text-red-500"

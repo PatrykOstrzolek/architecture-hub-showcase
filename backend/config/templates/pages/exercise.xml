@@ -46,81 +46,17 @@
             </meta>
         </property>
 
-        <!-- Quiz questions. Single block type by design (see ADR 0011 / exercises spec). -->
-        <block name="questions" default-type="multiple_choice" minOccurs="1" maxOccurs="20">
+        <!--
+            Bridge to a QuestionSet entity (see ADR-0014) — questions,
+            options, and the answer key live in normalized Question/Option
+            entities with their own admin screens, not in this page's
+            content. Reusable on any page template, not exercise-specific.
+        -->
+        <property name="questionSet" type="single_question_set_selection" mandatory="false">
             <meta>
-                <title lang="en">Questions</title>
-                <title lang="de">Fragen</title>
+                <title lang="en">Question Set</title>
+                <title lang="de">Fragenset</title>
             </meta>
-
-            <types>
-                <type name="multiple_choice">
-                    <meta>
-                        <title lang="en">Multiple choice</title>
-                        <title lang="de">Multiple Choice</title>
-                    </meta>
-                    <properties>
-                        <property name="question" type="text_line" mandatory="true">
-                            <meta>
-                                <title lang="en">Question</title>
-                                <title lang="de">Frage</title>
-                            </meta>
-                        </property>
-
-                        <property name="option_a" type="text_line" mandatory="true" colspan="6">
-                            <meta>
-                                <title lang="en">Option A</title>
-                                <title lang="de">Option A</title>
-                            </meta>
-                        </property>
-
-                        <property name="option_b" type="text_line" mandatory="true" colspan="6">
-                            <meta>
-                                <title lang="en">Option B</title>
-                                <title lang="de">Option B</title>
-                            </meta>
-                        </property>
-
-                        <property name="option_c" type="text_line" mandatory="true" colspan="6">
-                            <meta>
-                                <title lang="en">Option C</title>
-                                <title lang="de">Option C</title>
-                            </meta>
-                        </property>
-
-                        <property name="option_d" type="text_line" mandatory="true" colspan="6">
-                            <meta>
-                                <title lang="en">Option D</title>
-                                <title lang="de">Option D</title>
-                            </meta>
-                        </property>
-
-                        <property name="correct" type="single_select" mandatory="true" colspan="6">
-                            <meta>
-                                <title lang="en">Correct answer</title>
-                                <title lang="de">Richtige Antwort</title>
-                            </meta>
-                            <params>
-                                <param name="default_value" value="a"/>
-                                <param name="values" type="collection">
-                                    <param name="a"><meta><title lang="en">Option A</title></meta></param>
-                                    <param name="b"><meta><title lang="en">Option B</title></meta></param>
-                                    <param name="c"><meta><title lang="en">Option C</title></meta></param>
-                                    <param name="d"><meta><title lang="en">Option D</title></meta></param>
-                                </param>
-                            </params>
-                        </property>
-
-                        <property name="explanation" type="text_area" mandatory="false" colspan="6">
-                            <meta>
-                                <title lang="en">Explanation</title>
-                                <title lang="de">Erklärung</title>
-                                <info_text lang="en">Optional; shown after the user answers.</info_text>
-                            </meta>
-                        </property>
-                    </properties>
-                </type>
-            </types>
-        </block>
+        </property>
     </properties>
 </template>

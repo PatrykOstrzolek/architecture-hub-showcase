@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<list xmlns="http://schemas.sulu.io/list-builder/list">
+    <key>questions</key>
+
+    <properties>
+        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id" />
+        <property name="text" visibility="always" searchability="yes" translation="Question" />
+    </properties>
+</list>
