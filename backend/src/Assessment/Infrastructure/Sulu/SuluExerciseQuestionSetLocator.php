@@ -2,26 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Assessment\Infrastructure;
+namespace App\Assessment\Infrastructure\Sulu;
 
-use App\Assessment\Domain\Model\AnswerKey;
+use App\Assessment\Application\Port\ExerciseQuestionSetLocatorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Sulu\Content\Domain\Model\DimensionContentInterface;
 use Sulu\Page\Domain\Model\PageDimensionContent;
 
 /**
- * Loads the authoritative answer key for an exercise page directly from
- * Sulu's own content storage. Mirrors the raw-Doctrine-query style already
- * used in App\Controller\Website\ArticlesByTaxonomyController instead of
- * pulling in the headless StructureResolver/DocumentManager machinery.
+ * The one adapter allowed to touch Sulu's page/dimension-content storage —
+ * the Anti-Corruption Layer boundary between Assessment and Sulu. Mirrors
+ * the raw-Doctrine-query style already used in
+ * App\Controller\Website\ArticlesByTaxonomyController instead of pulling in
+ * the headless StructureResolver/DocumentManager machinery.
  */
-final readonly class ExerciseContentReader
+final readonly class SuluExerciseQuestionSetLocator implements ExerciseQuestionSetLocatorInterface
 {
     public function __construct(private EntityManagerInterface $em)
     {
     }
 
-    public function findAnswerKey(string $pageUuid): ?AnswerKey
+    public function findQuestionSetId(string $pageUuid): ?int
     {
         /** @var array{templateData: array<string, mixed>}|null $row */
         $row = $this->em->createQueryBuilder()
@@ -44,15 +45,8 @@ final readonly class ExerciseContentReader
             return null;
         }
 
-        /** @var list<array{correct?: string, explanation?: string|null}> $questions */
-        $questions = (array) ($row['templateData']['questions'] ?? []);
+        $questionSetId = $row['templateData']['questionSet'] ?? null;
 
-        return new AnswerKey(\array_map(
-            static fn (array $question): array => [
-                'correct' => (string) ($question['correct'] ?? ''),
-                'explanation' => $question['explanation'] ?? null,
-            ],
-            $questions,
-        ));
+        return \is_int($questionSetId) ? $questionSetId : null;
     }
 }

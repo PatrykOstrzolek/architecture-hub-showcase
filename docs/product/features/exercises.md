@@ -12,7 +12,11 @@ Provide users with optional quiz-style exercises attached to learning paths, all
 
 ## 3. Scope (MVP)
 
-- New `exercise` Sulu page template with a `multiple_choice` block type.
+- New `exercise` Sulu page template referencing a `QuestionSet` (see
+  [Question Sets](question-sets.md) — questions/options are normalized,
+  reusable entities with their own admin screens as of
+  [ADR-0014](../../architecture/adrs/0014-question-set-entities.md), not
+  authored inline on this template).
 - Each learning path can optionally reference one exercise page via a `single_page_selection` field.
 - Frontend renders the exercise as a single-page quiz with per-question feedback.
 - Grading is server-authoritative and each submission is persisted, keyed to an
@@ -23,28 +27,13 @@ Out of scope for MVP: real user accounts (and merging anonymous attempts into on
 
 ## 4. Content Model
 
-### `exercise` page template (`backend/config/templates/pages/exercise.xml`)
-
-| Property | Type | Notes |
-|---|---|---|
-| `title` | `text_line` | Required; used as page heading and `sulu.rlp.part` |
-| `url` | `route` | Auto-generated slug; lives under `/learning-paths/{slug}/exercise` |
-| `intro` | `text_area` | Optional preamble shown before the first question |
-| `questions` | `block` (1–20) | One block type: `multiple_choice` |
-
-**`multiple_choice` block properties:**
-
-| Property | Type | Notes |
-|---|---|---|
-| `question` | `text_line` | Mandatory |
-| `option_a` – `option_d` | `text_line` | Four answer options |
-| `correct` | `single_select` | Values: `a`, `b`, `c`, `d` |
-| `explanation` | `text_area` | Optional; shown after the user answers |
-
-`correct`/`explanation` remain ordinary Sulu properties (needed for admin
-authoring/preview), but are stripped from the **public** headless JSON before
-the user submits — see [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md).
-The frontend only learns them from the `POST /api/exercise-attempts` response.
+The exercise page template itself only carries `title`/`url`/`intro` and a
+reference to a `QuestionSet`; the questions, options, and answer key live in
+normalized entities with their own admin screens. See
+[Question Sets §4](question-sets.md#4-content-model) for the full field
+reference, and [ADR-0014](../../architecture/adrs/0014-question-set-entities.md)
+for why this replaced the original inline-block design (still described
+there for historical context).
 
 ### `learning-path` template change
 
@@ -61,17 +50,24 @@ This delivers as `content.exercise: { id, content: { title, url } } | null` via 
 ## 5. API
 
 The exercise page itself is still served by the existing `HeadlessWebsiteController`
-at `/learning-paths/{slug}/exercise.json`, exactly like every other template
-(minus the redacted `correct`/`explanation` fields — see §4). The frontend
-fetches it with the same `getContent()` helper.
+at `/learning-paths/{slug}/exercise.json`, exactly like every other template.
+The frontend fetches it with the same `getContent()` helper;
+`content.questionSet` never includes the answer key — see
+[Question Sets §5](question-sets.md#5-api) for the exact resolved shape and
+why (a real structural boundary now, not a redaction pass).
 
-Submitting answers is a custom endpoint, added in [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md):
+Submitting answers is a custom endpoint, added in [ADR-0012](../../architecture/adrs/0012-assessment-bounded-context.md),
+with its payload shape updated in [ADR-0014](../../architecture/adrs/0014-question-set-entities.md):
 
 ```
 POST /api/exercise-attempts
-{ "exerciseUuid": string, "sessionId": string, "answers": (string|null)[] }
-→ { "score": number, "total": number, "results": [{ correct, isCorrect, explanation }] }
+{ "exerciseUuid": string, "sessionId": string, "answers": number[][] }
+→ { "score": number, "total": number, "results": [{ correctOptionIds, submittedOptionIds, isCorrect, explanation }] }
 ```
+
+`answers[i]` is the set of selected Option ids for question `i` — see
+[Question Sets §5](question-sets.md#5-api) for the full grading contract,
+including how "select all that apply" is submitted.
 
 The browser never calls this directly — it goes through a Next.js proxy route
 (`frontend/app/api/exercise-attempts/route.ts`), the same server-to-server
@@ -91,7 +87,7 @@ shape as every other `/api/*` route in this project.
 
 | File | Change |
 |---|---|
-| `frontend/components/content/types.ts` | Add `MultipleChoiceBlock`, `ExerciseContent`, `ExerciseGradeResult` types |
+| `frontend/components/content/types.ts` | `ExerciseQuestion`/`ExerciseOption`/`ExerciseQuestionSet`, `ExerciseContent`, `ExerciseGradeResult` types |
 | `frontend/components/content/learning-path-view.tsx` | Add "Test yourself →" link when `content.exercise` is set |
 | `frontend/app/[[...slug]]/page.tsx` | Add `case "exercise":` to the template switch; pass the page's own `id` as `exerciseId` |
 
@@ -103,12 +99,16 @@ shape as every other `/api/*` route in this project.
 
 ```ts
 type QuizState = {
-  answers: (string | null)[]  // indexed per question; null = unanswered
+  answers: number[][]  // per question, the set of selected option ids; [] = unanswered
   submitting: boolean
   error: string | null
   result: ExerciseGradeResult | null  // non-null once the server has graded the submission
 }
 ```
+
+Every option renders as a checkbox uniformly — there's no radio-vs-checkbox
+branching based on how many options a question has correct. See
+[Question Sets](question-sets.md) for why.
 
 The in-progress answers (and the graded result) reset on page refresh — nothing
 about the *quiz UI* is persisted client-side. The submission itself is
@@ -127,10 +127,10 @@ reads that back.
 
 ## 7. Acceptance Criteria
 
-- Content manager can create an exercise page under a learning path in Sulu and link it via the `exercise` field.
-- Exercise page displays title, optional intro, and all questions.
-- Each question shows four answer options; only one can be selected.
-- The public exercise JSON never includes `correct`/`explanation` before submission.
+- Content manager can create an exercise page under a learning path in Sulu, attach an existing `QuestionSet` via the `questionSet` field, and link the page via `learning-path.xml`'s `exercise` field.
+- Exercise page displays title, optional intro, and all questions from the attached `QuestionSet`.
+- Each question shows its options as checkboxes; any number can be selected (see [Question Sets](question-sets.md) for "select all that apply").
+- The public exercise JSON never includes the answer key (`isCorrect`/`explanation`) before submission.
 - Submitting reveals which answers are correct and shows any explanations, as returned by `POST /api/exercise-attempts`.
 - "Test yourself →" link appears on the learning path page only when an exercise is linked.
 - Score summary is shown after submission.

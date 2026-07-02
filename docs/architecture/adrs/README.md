@@ -26,3 +26,4 @@ alternatives considered, and the trade-offs accepted.
 | [0011](0011-exercise-page-template.md) | Exercise Page Template for Interactive Quizzes | Accepted |
 | [0012](0012-assessment-bounded-context.md) | Assessment Bounded Context for Server-Graded Exercise Attempts | Accepted |
 | [0013](0013-draft-mode-preview.md) | Next.js Draft Mode for the Real-Frontend Preview | Accepted |
+| [0014](0014-question-set-entities.md) | Normalized Question/QuestionSet Entities, Replacing Content-Type-Based Exercise Authoring | Accepted |

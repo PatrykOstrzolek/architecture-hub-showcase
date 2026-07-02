@@ -9,11 +9,13 @@
         <p>{{ content.intro }}</p>
     {% endif %}
 
-    {% if content.questions %}
-        <ol>
-            {% for question in content.questions %}
-                <li>{{ question.question }}</li>
-            {% endfor %}
-        </ol>
+    {# content.questionSet is just the raw QuestionSet id here — this template
+       goes through Sulu's native (non-headless) resolution pipeline, which
+       has no resolver registered for `single_question_set_selection` (only
+       the headless one, see QuestionSetSelectionPropertyResolver). No
+       question text/count is available to render, so just acknowledge the
+       linked set instead of guessing at its contents. #}
+    {% if content.questionSet %}
+        <p>This exercise includes an interactive question set — view it in the app for the full experience.</p>
     {% endif %}
 {% endblock %}

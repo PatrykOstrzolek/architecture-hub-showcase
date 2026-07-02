@@ -23,6 +23,27 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
+    # Ports (Assessment/Domain, Assessment/Application/Port) -> their one
+    # real adapter (Assessment/Infrastructure) — see ADR-0014.
+    App\Assessment\Domain\Repository\QuestionRepositoryInterface: '@App\Assessment\Infrastructure\Doctrine\DoctrineQuestionRepository'
+    App\Assessment\Domain\Repository\QuestionSetRepositoryInterface: '@App\Assessment\Infrastructure\Doctrine\DoctrineQuestionSetRepository'
+    App\Assessment\Domain\Repository\AttemptRepositoryInterface: '@App\Assessment\Infrastructure\Doctrine\DoctrineAttemptRepository'
+    App\Assessment\Application\Port\ExerciseQuestionSetLocatorInterface: '@App\Assessment\Infrastructure\Sulu\SuluExerciseQuestionSetLocator'
+
+    # sulu_headless.content_type_resolver, not sulu_content.property_resolver —
+    # HeadlessWebsiteController (the .json public routes) consults
+    # sulu/headless-bundle's own, separate ContentTypeResolver system.
+    App\Assessment\Infrastructure\Sulu\PropertyResolver\QuestionSetSelectionPropertyResolver:
+        tags:
+            - { name: 'sulu_headless.content_type_resolver' }
+
+    # Tagged sulu.context: admin — registers the "Questions"/"Question Sets"
+    # admin nav items + REST resources, admin-context-only (see AssessmentAdmin).
+    App\Assessment\Infrastructure\Sulu\Admin\AssessmentAdmin:
+        tags:
+            - { name: 'sulu.admin' }
+            - { name: 'sulu.context', context: 'admin' }
+
     App\EventSubscriber\NextjsCacheInvalidationSubscriber:
         arguments:
             $nextRevalidateUrl: '%env(default::NEXT_REVALIDATE_URL)%'

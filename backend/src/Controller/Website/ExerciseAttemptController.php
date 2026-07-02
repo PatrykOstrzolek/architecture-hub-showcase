@@ -12,10 +12,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 readonly class ExerciseAttemptController
 {
-    private const VALID_OPTIONS = ['a', 'b', 'c', 'd'];
+    /** Payload-shape sanity guard only — real bounds come from the actual QuestionSet, enforced downstream. */
+    private const MAX_QUESTIONS = 50;
 
-    /** Matches the exercise template's `maxOccurs="20"` on the `questions` block. */
-    private const MAX_QUESTIONS = 20;
+    /** Payload-shape sanity guard only — real bounds come from the actual QuestionSet, enforced downstream. */
+    private const MAX_SELECTED_OPTIONS_PER_QUESTION = 20;
 
     public function __construct(private SubmitAttemptService $submitAttemptService)
     {
@@ -59,7 +60,7 @@ readonly class ExerciseAttemptController
     }
 
     /**
-     * @phpstan-assert-if-true list<string|null> $value
+     * @phpstan-assert-if-true list<list<int>> $value
      */
     private function isValidAnswers(mixed $value): bool
     {
@@ -67,9 +68,18 @@ readonly class ExerciseAttemptController
             return false;
         }
 
-        foreach ($value as $answer) {
-            if (null !== $answer && !\in_array($answer, self::VALID_OPTIONS, true)) {
+        foreach ($value as $selectedOptionIds) {
+            if (!\is_array($selectedOptionIds)
+                || !\array_is_list($selectedOptionIds)
+                || \count($selectedOptionIds) > self::MAX_SELECTED_OPTIONS_PER_QUESTION
+            ) {
                 return false;
+            }
+
+            foreach ($selectedOptionIds as $optionId) {
+                if (!\is_int($optionId)) {
+                    return false;
+                }
             }
         }
 
