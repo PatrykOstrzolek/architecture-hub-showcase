@@ -49,7 +49,7 @@ final class SubmitAttemptServiceTest extends TestCase
         $this->assignId($correct, 101);
 
         $this->locator->method('findQuestionSetId')->with(self::PAGE_UUID)->willReturn(42);
-        $this->questionSets->method('find')->with(42)->willReturn($questionSet);
+        $this->questionSets->method('findWithQuestions')->with(42)->willReturn($questionSet);
         $this->attempts->expects(self::once())->method('save');
 
         $result = $this->service->submit(self::PAGE_UUID, self::SESSION_ID, [[101]]);
@@ -69,7 +69,7 @@ final class SubmitAttemptServiceTest extends TestCase
         $this->assignId($correct, 101);
 
         $this->locator->method('findQuestionSetId')->willReturn(42);
-        $this->questionSets->method('find')->willReturn($questionSet);
+        $this->questionSets->method('findWithQuestions')->willReturn($questionSet);
         $this->attempts->expects(self::once())->method('save');
 
         // 999 doesn't match any real Option id on this QuestionSet.
@@ -89,7 +89,7 @@ final class SubmitAttemptServiceTest extends TestCase
     public function testUnknownExerciseThrowsWhenLocatorFindsNoQuestionSet(): void
     {
         $this->locator->method('findQuestionSetId')->willReturn(null);
-        $this->questionSets->expects(self::never())->method('find');
+        $this->questionSets->expects(self::never())->method('findWithQuestions');
         $this->attempts->expects(self::never())->method('save');
 
         $this->expectException(ExerciseNotFoundException::class);
@@ -101,7 +101,7 @@ final class SubmitAttemptServiceTest extends TestCase
     public function testUnknownExerciseThrowsWhenQuestionSetRepositoryFindsNothing(): void
     {
         $this->locator->method('findQuestionSetId')->willReturn(42);
-        $this->questionSets->method('find')->with(42)->willReturn(null);
+        $this->questionSets->method('findWithQuestions')->with(42)->willReturn(null);
         $this->attempts->expects(self::never())->method('save');
 
         $this->expectException(ExerciseNotFoundException::class);

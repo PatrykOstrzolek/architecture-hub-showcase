@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineQuestionSetRepository implements QuestionSetRepositoryInterface
 {
+    use PreservesRequestedIdOrder;
+
     public function __construct(private EntityManagerInterface $em)
     {
     }
@@ -17,6 +19,22 @@ final readonly class DoctrineQuestionSetRepository implements QuestionSetReposit
     public function find(int $id): ?QuestionSet
     {
         return $this->em->find(QuestionSet::class, $id);
+    }
+
+    public function findWithQuestions(int $id): ?QuestionSet
+    {
+        $result = $this->em->createQueryBuilder()
+            ->select('qs', 'items', 'question', 'options')
+            ->from(QuestionSet::class, 'qs')
+            ->leftJoin('qs.items', 'items')
+            ->leftJoin('items.question', 'question')
+            ->leftJoin('question.options', 'options')
+            ->where('qs.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result instanceof QuestionSet ? $result : null;
     }
 
     /**
@@ -34,24 +52,7 @@ final readonly class DoctrineQuestionSetRepository implements QuestionSetReposit
      */
     public function findByIds(array $ids): array
     {
-        if ([] === $ids) {
-            return [];
-        }
-
-        /** @var list<QuestionSet> $found */
-        $found = $this->em->getRepository(QuestionSet::class)->findBy(['id' => $ids]);
-        $byId = [];
-        foreach ($found as $questionSet) {
-            $id = $questionSet->getId();
-            if (null !== $id) {
-                $byId[$id] = $questionSet;
-            }
-        }
-
-        return \array_values(\array_filter(\array_map(
-            static fn (int $id): ?QuestionSet => $byId[$id] ?? null,
-            $ids,
-        )));
+        return $this->findByIdsPreservingOrder($this->em, QuestionSet::class, $ids);
     }
 
     public function save(QuestionSet $questionSet): void

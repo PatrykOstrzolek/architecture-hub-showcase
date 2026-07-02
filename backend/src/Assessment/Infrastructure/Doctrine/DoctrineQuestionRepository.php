@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineQuestionRepository implements QuestionRepositoryInterface
 {
+    use PreservesRequestedIdOrder;
+
     public function __construct(private EntityManagerInterface $em)
     {
     }
@@ -34,26 +36,7 @@ final readonly class DoctrineQuestionRepository implements QuestionRepositoryInt
      */
     public function findByIds(array $ids): array
     {
-        if ([] === $ids) {
-            return [];
-        }
-
-        /** @var list<Question> $found */
-        $found = $this->em->getRepository(Question::class)->findBy(['id' => $ids]);
-        $byId = [];
-        foreach ($found as $question) {
-            $id = $question->getId();
-            if (null !== $id) {
-                $byId[$id] = $question;
-            }
-        }
-
-        // Preserve the requested order — Sulu's selection picker widgets
-        // resolve labels via ?ids=... and expect results in that order.
-        return \array_values(\array_filter(\array_map(
-            static fn (int $id): ?Question => $byId[$id] ?? null,
-            $ids,
-        )));
+        return $this->findByIdsPreservingOrder($this->em, Question::class, $ids);
     }
 
     public function save(Question $question): void

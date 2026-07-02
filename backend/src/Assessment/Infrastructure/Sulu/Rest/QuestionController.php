@@ -30,15 +30,7 @@ readonly class QuestionController
     #[Route('/admin/api/questions', name: 'app.admin_api.questions.list', methods: ['GET'])]
     public function cgetAction(Request $request): JsonResponse
     {
-        // Sulu's generic selection picker widgets resolve labels for
-        // already-selected ids via ?ids=1,2,3 — without honoring this filter,
-        // the widget receives every question and mismatches which label
-        // belongs to which id. Matches Sulu's own TagController convention.
-        $ids = \array_values(\array_filter(\array_map(
-            static fn (string $id): ?int => \ctype_digit($id) ? (int) $id : null,
-            \explode(',', $request->query->get('ids', '')),
-        )));
-
+        $ids = IdListQueryParser::parse($request->query->get('ids', ''));
         $questions = [] !== $ids ? $this->questions->findByIds($ids) : $this->questions->findAll();
         $items = \array_map($this->toListItem(...), $questions);
 

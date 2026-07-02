@@ -315,6 +315,15 @@ class ExerciseFixture extends Fixture implements FixtureGroupInterface, Dependen
         $questionSet = $this->em->getRepository(QuestionSet::class)->findOneBy(['title' => $questionSetTitle]);
         if (null === $questionSet) {
             $questionSet = new QuestionSet($questionSetTitle);
+        } else {
+            // Re-running this fixture (`--append`) must not leak the previous
+            // run's Question/Option rows — this fixture never shares a
+            // Question across multiple sets, so removing the old ones
+            // outright before rebuilding is safe here. orphanRemoval on
+            // Question::$options cascades this to their Options too.
+            foreach ($questionSet->getOrderedQuestions() as $oldQuestion) {
+                $this->em->remove($oldQuestion);
+            }
         }
 
         $builtQuestions = [];

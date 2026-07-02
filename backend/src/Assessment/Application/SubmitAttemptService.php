@@ -36,7 +36,7 @@ readonly class SubmitAttemptService
             throw new ExerciseNotFoundException($exerciseUuid);
         }
 
-        $questionSet = $this->questionSets->find($questionSetId);
+        $questionSet = $this->questionSets->findWithQuestions($questionSetId);
         if (null === $questionSet) {
             throw new ExerciseNotFoundException($exerciseUuid);
         }

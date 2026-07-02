@@ -41,7 +41,7 @@ final class QuestionSetSelectionPropertyResolverTest extends TestCase
         $question->addOption('Something else', false);
         $questionSet->addQuestion($question);
 
-        $this->questionSets->method('find')->with(42)->willReturn($questionSet);
+        $this->questionSets->method('findWithQuestions')->with(42)->willReturn($questionSet);
 
         $view = $this->resolver->resolve(42, $this->fieldMetadata, 'en');
 
@@ -69,7 +69,7 @@ final class QuestionSetSelectionPropertyResolverTest extends TestCase
 
     public function testNonIntegerDataResolvesToNull(): void
     {
-        $this->questionSets->expects(self::never())->method('find');
+        $this->questionSets->expects(self::never())->method('findWithQuestions');
 
         $view = $this->resolver->resolve('not-an-id', $this->fieldMetadata, 'en');
 
@@ -79,7 +79,7 @@ final class QuestionSetSelectionPropertyResolverTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testUnknownQuestionSetIdResolvesToNull(): void
     {
-        $this->questionSets->method('find')->with(99)->willReturn(null);
+        $this->questionSets->method('findWithQuestions')->with(99)->willReturn(null);
 
         $view = $this->resolver->resolve(99, $this->fieldMetadata, 'en');
 

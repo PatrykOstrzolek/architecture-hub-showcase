@@ -39,7 +39,7 @@ final readonly class QuestionSetSelectionPropertyResolver implements ContentType
             return new ContentView(null, ['id' => null]);
         }
 
-        $questionSet = $this->questionSets->find($data);
+        $questionSet = $this->questionSets->findWithQuestions($data);
         if (null === $questionSet) {
             return new ContentView(null, ['id' => $data]);
         }

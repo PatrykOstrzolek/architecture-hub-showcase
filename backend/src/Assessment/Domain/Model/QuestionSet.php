@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'assessment_question_set')]
-class QuestionSet
+class QuestionSet implements Identifiable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

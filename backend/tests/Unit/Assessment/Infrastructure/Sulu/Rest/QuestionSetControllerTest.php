@@ -39,7 +39,7 @@ final class QuestionSetControllerTest extends TestCase
         $set->addQuestion($q1, 0);
         $set->addQuestion($q2, 1);
 
-        $this->questionSets->method('find')->with(1)->willReturn($set);
+        $this->questionSets->method('findWithQuestions')->with(1)->willReturn($set);
 
         $response = $this->controller->getAction(1);
         $body = $this->decode($response);
@@ -51,7 +51,7 @@ final class QuestionSetControllerTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testGetActionReturns404ForUnknownSet(): void
     {
-        $this->questionSets->method('find')->willReturn(null);
+        $this->questionSets->method('findWithQuestions')->willReturn(null);
 
         $response = $this->controller->getAction(999);
 
@@ -64,10 +64,7 @@ final class QuestionSetControllerTest extends TestCase
         $questionOne = new Question('Q1', null);
         $questionTwo = new Question('Q2', null);
 
-        $this->questions->method('find')->willReturnMap([
-            [1, $questionOne],
-            [2, $questionTwo],
-        ]);
+        $this->questions->method('findByIds')->with([1, 2])->willReturn([$questionOne, $questionTwo]);
 
         $saved = null;
         $this->questionSets->expects(self::once())->method('save')
@@ -95,7 +92,7 @@ final class QuestionSetControllerTest extends TestCase
     public function testSameQuestionCanBeAttachedToTwoDifferentSets(): void
     {
         $sharedQuestion = new Question('Shared question', null);
-        $this->questions->method('find')->with(7)->willReturn($sharedQuestion);
+        $this->questions->method('findByIds')->with([7])->willReturn([$sharedQuestion]);
         $this->questionSets->expects(self::exactly(2))->method('save');
 
         $responseOne = $this->controller->postAction($this->request(['title' => 'Set One', 'questionIds' => [7]]));
@@ -108,7 +105,7 @@ final class QuestionSetControllerTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testPostActionIgnoresUnresolvableQuestionIds(): void
     {
-        $this->questions->method('find')->willReturn(null);
+        $this->questions->method('findByIds')->willReturn([]);
         $this->questionSets->expects(self::once())->method('save');
 
         $response = $this->controller->postAction($this->request([
