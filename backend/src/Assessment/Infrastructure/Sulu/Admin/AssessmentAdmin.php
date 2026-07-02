@@ -12,14 +12,15 @@ use Sulu\Bundle\AdminBundle\Admin\View\ViewBuilderFactoryInterface;
 use Sulu\Bundle\AdminBundle\Admin\View\ViewCollection;
 
 /**
- * Registers the "Questions" and "Question Sets" admin sections — this
- * project's first Sulu Admin extension not backed by a page template. One
- * Admin class for both resources since they're one bounded context
- * (Assessment), mirroring how Sulu's own ContactAdmin registers both
- * Contacts and Accounts. No fine-grained SecurityChecker permission gating
- * (unlike Sulu's own TagAdmin) — this project has a single admin role, so
- * the standing `^/admin -> ROLE_USER` firewall rule is the only gate needed,
- * same as every other admin screen here. See ADR-0014.
+ * Registers the "Questions" and "Question Sets" admin sections under a
+ * top-level "Assessment" navigation item — this project's first Sulu Admin
+ * extension not backed by a page template. One Admin class for both
+ * resources since they're one bounded context (Assessment), mirroring how
+ * Sulu's own ContactAdmin/MediaAdmin register a top-level item with child
+ * views. No fine-grained SecurityChecker permission gating (unlike Sulu's
+ * own TagAdmin) — this project has a single admin role, so the standing
+ * `^/admin -> ROLE_USER` firewall rule is the only gate needed, same as
+ * every other admin screen here. See ADR-0014.
  */
 class AssessmentAdmin extends Admin
 {
@@ -41,15 +42,21 @@ class AssessmentAdmin extends Admin
         // translations/ domain set up for a two-screen internal admin tool,
         // and Sulu just displays the raw string as a fallback when no
         // translation exists, so this is the same outcome with less ceremony.
+        $assessment = new NavigationItem('Assessment');
+        $assessment->setPosition(40);
+        $assessment->setIcon('su-pen');
+
         $questions = new NavigationItem('Questions');
-        $questions->setPosition(40);
+        $questions->setPosition(10);
         $questions->setView(self::QUESTION_LIST_VIEW);
-        $navigationItemCollection->get(Admin::SETTINGS_NAVIGATION_ITEM)->addChild($questions);
+        $assessment->addChild($questions);
 
         $questionSets = new NavigationItem('Question Sets');
-        $questionSets->setPosition(41);
+        $questionSets->setPosition(20);
         $questionSets->setView(self::QUESTION_SET_LIST_VIEW);
-        $navigationItemCollection->get(Admin::SETTINGS_NAVIGATION_ITEM)->addChild($questionSets);
+        $assessment->addChild($questionSets);
+
+        $navigationItemCollection->add($assessment);
     }
 
     public function configureViews(ViewCollection $viewCollection): void
