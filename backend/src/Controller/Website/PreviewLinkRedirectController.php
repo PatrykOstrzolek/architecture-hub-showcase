@@ -35,8 +35,8 @@ readonly class PreviewLinkRedirectController
         private PreviewLinkRepositoryInterface $previewLinkRepository,
         private RouteRepositoryInterface $routeRepository,
         private PublicPreviewController $original,
-        private string $frontendUrl,
-        private string $previewSecret,
+        private ?string $frontendUrl,
+        private ?string $previewSecret,
     ) {
     }
 
@@ -47,8 +47,8 @@ readonly class PreviewLinkRedirectController
 
         if (null === $previewLink
             || PageInterface::RESOURCE_KEY !== $previewLink->getResourceKey()
-            || '' === $this->frontendUrl
-            || '' === $this->previewSecret
+            || null === $this->frontendUrl || '' === $this->frontendUrl
+            || null === $this->previewSecret || '' === $this->previewSecret
         ) {
             return $this->original->previewAction($token);
         }

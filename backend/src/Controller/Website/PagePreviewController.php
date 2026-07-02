@@ -38,7 +38,7 @@ readonly class PagePreviewController
         private PageRepositoryInterface $pageRepository,
         private ContentManagerInterface $contentManager,
         private StructureResolverInterface $structureResolver,
-        private string $previewSecret,
+        private ?string $previewSecret,
     ) {
     }
 
@@ -94,7 +94,7 @@ readonly class PagePreviewController
 
     private function isAuthorized(Request $request): bool
     {
-        if ('' === $this->previewSecret) {
+        if (null === $this->previewSecret || '' === $this->previewSecret) {
             return false;
         }
 

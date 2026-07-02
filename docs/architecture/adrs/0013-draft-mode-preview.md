@@ -118,6 +118,71 @@ always active in prod. Local testing — however thorough — cannot exercise
 that layer at all; only a real deploy (or intentionally reproducing
 `APP_ENV=prod` locally) can.
 
+### Production incident: nginx allowlist change never reached the server
+
+The `api_domain` nginx carve-out described above (committed alongside the
+`/admin/api/preview/pages` move) still 404'd in production after deploying —
+`cd-backend.yml`'s `deploy.yml` playbook only ever runs the `app` Ansible
+role (env file, docker-compose, container restart); nothing ran the `nginx`
+role, so `ansible/roles/nginx/templates/app.conf.j2` changes were never
+templated onto the server by any automated pipeline. `provision.yml` (the
+playbook that *does* include the `nginx` role) had no CI trigger at all —
+infra changes required someone to SSH in and run Ansible by hand, which
+nobody had. Fixed by adding `cd-infra.yml`, a `workflow_dispatch`-triggered
+workflow that runs `provision.yml` on demand (see
+[ADR-0006](0006-ci-cd-and-ansible-deployment.md)). Two follow-on bugs
+surfaced getting that workflow to run cleanly: the `common` role's `ufw`
+tasks need the `community.general` collection, which the new workflow never
+installed; and the initial `ansible-galaxy collection install
+"community.general:==9.*"` version constraint used pip-style wildcard syntax,
+which `ansible-galaxy` rejects (`Non integer values in LooseVersion`) —
+fixed with range syntax (`>=9.0.0,<10.0.0`).
+
+### Production incident: `/admin/api/preview/pages` 500'd again after the nginx fix landed
+
+With the nginx fix deployed (confirmed via `changed: [production]` on the
+"Deploy virtual host config" task), the endpoint went from 404 to 500 — real
+progress, since it meant nginx now proxied through to PHP, but PHP itself
+was still failing. The response was a *generic* Symfony error page (no Sulu
+website theming), unlike the first incident's Sulu-themed one — a signal the
+`/admin`-context routing fix had worked and this was a genuinely different,
+earlier-stage failure (container/service instantiation, not
+request-handling).
+
+Root cause: `services.yaml` bound `$previewSecret: '%env(default::PREVIEW_SECRET)%'`
+against a non-nullable `private string $previewSecret` constructor
+parameter. Symfony's `default:` env processor does **not** return the raw
+env value whenever it's falsy — reading `EnvVarProcessor::getEnv()`, it
+returns the fallback parameter (here, since the fallback name is empty,
+`null`) any time the underlying env var is `''`, not only when the var is
+completely undefined. `ansible/roles/app/templates/.env.j2` renders
+`PREVIEW_SECRET={{ vault_preview_secret | default('') }}`, and the real
+vault has no `vault_preview_secret` key yet, so production's env var is set
+but empty — which resolves to `null`, not `''`, and injecting `null` into a
+non-nullable `string` constructor parameter is a `TypeError` at service
+instantiation, before any of the controller's own logic (including the
+`'' === $this->previewSecret` early-return this code was already relying
+on) ever runs. Confirmed by directly exercising `EnvVarProcessor::getEnv('default', ':PREVIEW_SECRET', fn() => '')`
+in isolation (returns `NULL`), and by reproducing the exact 500 locally with
+`PREVIEW_SECRET=` in `.env.local`.
+
+**Fix**: made `$previewSecret` (`PagePreviewController`) and both
+`$previewSecret`/`$frontendUrl` (`PreviewLinkRedirectController`) nullable
+(`?string`), with explicit `null === ... || '' === ...` checks instead of
+relying on the env processor to always produce a `string`. Verified locally
+by reproducing the crash (temporarily blanking `.env.local`'s
+`PREVIEW_SECRET`, confirming a `500` before the fix and a clean `401` after)
+before pushing.
+
+**Lesson**: `%env(default:...)%` treats *any* falsy value from the
+underlying env var — not just a genuinely undefined one — as "use the
+fallback," and an empty fallback parameter name resolves to `null`. Any
+`string`-typed (non-nullable) service argument fed through `default:` must
+tolerate the env var being legitimately set-but-empty, which is exactly the
+shape Ansible's `| default('')` produces for an unset vault key. This bug
+class is invisible locally whenever `.env.local` happens to always carry a
+real value, which it did throughout this feature's development.
+
 ### Negative / Risks
 
 *   **Not live-as-you-type.** Sulu's own inline admin iframe re-renders on
