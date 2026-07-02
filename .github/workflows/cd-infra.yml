@@ -44,10 +44,17 @@ jobs:
         run: echo "$VAULT_FILE" > ansible/group_vars/all/vault.yml
 
       - name: Run provision playbook
-        run: >
-          ansible-playbook playbooks/provision.yml
-          --inventory inventory/production.ini
-          --vault-password-file ~/.vault_pass
-          --extra-vars "ansible_host=${{ secrets.PRODUCTION_HOST }}"
-          ${{ github.event.inputs.tags != '' && format('--tags {0}', github.event.inputs.tags) || '' }}
+        env:
+          ANSIBLE_HOST: ${{ secrets.PRODUCTION_HOST }}
+          ANSIBLE_TAGS: ${{ github.event.inputs.tags }}
+        run: |
+          tags_args=()
+          if [ -n "$ANSIBLE_TAGS" ]; then
+            tags_args=(--tags "$ANSIBLE_TAGS")
+          fi
+          ansible-playbook playbooks/provision.yml \
+            --inventory inventory/production.ini \
+            --vault-password-file ~/.vault_pass \
+            --extra-vars "ansible_host=$ANSIBLE_HOST" \
+            "${tags_args[@]}"
         working-directory: ${{ github.workspace }}/ansible
