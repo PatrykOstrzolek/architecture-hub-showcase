@@ -21,12 +21,18 @@ final readonly class DoctrineQuestionRepository implements QuestionRepositoryInt
         return $this->em->find(Question::class, $id);
     }
 
-    /**
-     * @return list<Question>
-     */
-    public function findAll(): array
+    public function findWithOptions(int $id): ?Question
     {
-        return $this->em->getRepository(Question::class)->findAll();
+        $result = $this->em->createQueryBuilder()
+            ->select('q', 'options')
+            ->from(Question::class, 'q')
+            ->leftJoin('q.options', 'options')
+            ->where('q.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result instanceof Question ? $result : null;
     }
 
     /**
@@ -37,6 +43,36 @@ final readonly class DoctrineQuestionRepository implements QuestionRepositoryInt
     public function findByIds(array $ids): array
     {
         return $this->findByIdsPreservingOrder($this->em, Question::class, $ids);
+    }
+
+    /**
+     * @return list<Question>
+     */
+    public function findPaginated(int $page, int $limit): array
+    {
+        /** @var list<Question> $result */
+        $result = $this->em->createQueryBuilder()
+            ->select('q')
+            ->from(Question::class, 'q')
+            ->orderBy('q.id', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
+
+    public function count(): int
+    {
+        /** @var int|string $total */
+        $total = $this->em->createQueryBuilder()
+            ->select('COUNT(q.id)')
+            ->from(Question::class, 'q')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $total;
     }
 
     public function save(Question $question): void

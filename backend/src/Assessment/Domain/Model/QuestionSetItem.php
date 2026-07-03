@@ -15,6 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'assessment_question_set_item')]
+#[ORM\Index(columns: ['question_set_id', 'position'], name: 'idx_question_set_item_set_position')]
 class QuestionSetItem
 {
     #[ORM\Id]

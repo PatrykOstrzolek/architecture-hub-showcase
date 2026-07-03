@@ -8,6 +8,7 @@ use App\Assessment\Domain\Model\Question;
 use App\Assessment\Domain\Model\QuestionSet;
 use App\Assessment\Domain\Repository\QuestionRepositoryInterface;
 use App\Assessment\Domain\Repository\QuestionSetRepositoryInterface;
+use App\Assessment\Infrastructure\Cache\QuestionSetCacheKey;
 use App\Assessment\Infrastructure\Sulu\Rest\QuestionSetController;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -15,19 +16,99 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\Cache\CacheInterface;
 
 #[CoversClass(QuestionSetController::class)]
 final class QuestionSetControllerTest extends TestCase
 {
     private QuestionSetRepositoryInterface&MockObject $questionSets;
     private QuestionRepositoryInterface&MockObject $questions;
+    private CacheInterface&MockObject $cache;
     private QuestionSetController $controller;
 
     protected function setUp(): void
     {
         $this->questionSets = $this->createMock(QuestionSetRepositoryInterface::class);
         $this->questions = $this->createMock(QuestionRepositoryInterface::class);
-        $this->controller = new QuestionSetController($this->questionSets, $this->questions);
+        $this->cache = $this->createMock(CacheInterface::class);
+        $this->controller = new QuestionSetController($this->questionSets, $this->questions, $this->cache);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCgetActionWithIdsFilterReturnsUnpaginatedFullSetAndNeverPaginates(): void
+    {
+        $setOne = new QuestionSet('Set One');
+        $setTwo = new QuestionSet('Set Two');
+
+        $this->questionSets->expects(self::once())->method('findByIds')->with([1, 2])->willReturn([$setOne, $setTwo]);
+        $this->questionSets->expects(self::never())->method('findPaginated');
+        $this->questionSets->expects(self::never())->method('count');
+
+        $response = $this->controller->cgetAction($this->queryRequest(['ids' => '1,2']));
+        $body = $this->decode($response);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertArrayNotHasKey('page', $body);
+        /** @var array<string, mixed> $embedded */
+        $embedded = $body['_embedded'];
+        /** @var list<mixed> $items */
+        $items = $embedded['question_sets'];
+        self::assertCount(2, $items);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCgetActionWithoutIdsReturnsDefaultPaginatedRepresentation(): void
+    {
+        $setOne = new QuestionSet('Set One');
+        $setTwo = new QuestionSet('Set Two');
+
+        $this->questionSets->expects(self::never())->method('findByIds');
+        $this->questionSets->method('findPaginated')->with(1, 10)->willReturn([$setOne, $setTwo]);
+        $this->questionSets->method('count')->willReturn(2);
+
+        $response = $this->controller->cgetAction($this->queryRequest([]));
+        $body = $this->decode($response);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(1, $body['page']);
+        self::assertSame(10, $body['limit']);
+        self::assertSame(2, $body['total']);
+        /** @var array<string, mixed> $embedded */
+        $embedded = $body['_embedded'];
+        /** @var list<mixed> $items */
+        $items = $embedded['question_sets'];
+        self::assertCount(2, $items);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCgetActionWithoutIdsAppliesExplicitPageAndLimit(): void
+    {
+        $set = new QuestionSet('Set One');
+
+        $this->questionSets->method('findPaginated')->with(2, 5)->willReturn([$set]);
+        $this->questionSets->method('count')->willReturn(11);
+
+        $response = $this->controller->cgetAction($this->queryRequest(['page' => '2', 'limit' => '5']));
+        $body = $this->decode($response);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(2, $body['page']);
+        self::assertSame(5, $body['limit']);
+        self::assertSame(11, $body['total']);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCgetActionDefaultsGracefullyOnMalformedPageAndLimit(): void
+    {
+        $this->questionSets->method('findPaginated')->with(1, 10)->willReturn([]);
+        $this->questionSets->method('count')->willReturn(0);
+
+        $response = $this->controller->cgetAction($this->queryRequest(['page' => 'not-a-number', 'limit' => '-5']));
+        $body = $this->decode($response);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(1, $body['page']);
+        self::assertSame(10, $body['limit']);
     }
 
     #[AllowMockObjectsWithoutExpectations]
@@ -89,6 +170,7 @@ final class QuestionSetControllerTest extends TestCase
         self::assertSame([$questionOne, $questionTwo], $saved?->getOrderedQuestions());
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testSameQuestionCanBeAttachedToTwoDifferentSets(): void
     {
         $sharedQuestion = new Question('Shared question', null);
@@ -119,15 +201,52 @@ final class QuestionSetControllerTest extends TestCase
     }
 
     #[AllowMockObjectsWithoutExpectations]
+    public function testPostActionDeletesCacheEntryForNewlyAssignedId(): void
+    {
+        $this->questions->method('findByIds')->willReturn([]);
+        $this->questionSets->method('save')->willReturnCallback(
+            function (QuestionSet $questionSet): void {
+                $this->assignId($questionSet, 5);
+            },
+        );
+        $this->cache->expects(self::once())->method('delete')->with(QuestionSetCacheKey::for(5));
+
+        $response = $this->controller->postAction($this->request(['title' => 'Quiz', 'questionIds' => []]));
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testPutActionDeletesCacheEntryForQuestionSetId(): void
+    {
+        $set = new QuestionSet('Original title');
+        $this->assignId($set, 3);
+        $this->questionSets->method('findWithQuestions')->with(3)->willReturn($set);
+        $this->questions->method('findByIds')->willReturn([]);
+        $this->cache->expects(self::once())->method('delete')->with(QuestionSetCacheKey::for(3));
+
+        $response = $this->controller->putAction(3, $this->request(['title' => 'Updated title', 'questionIds' => []]));
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
     public function testDeleteActionRemovesQuestionSet(): void
     {
         $set = new QuestionSet('To delete');
         $this->questionSets->method('find')->with(1)->willReturn($set);
         $this->questionSets->expects(self::once())->method('remove')->with($set);
+        $this->cache->expects(self::once())->method('delete')->with(QuestionSetCacheKey::for(1));
 
         $response = $this->controller->deleteAction(1);
 
         self::assertSame(204, $response->getStatusCode());
+    }
+
+    private function assignId(QuestionSet $questionSet, int $id): void
+    {
+        $property = new \ReflectionProperty($questionSet, 'id');
+        $property->setValue($questionSet, $id);
     }
 
     /**
@@ -147,5 +266,13 @@ final class QuestionSetControllerTest extends TestCase
     private function request(array $payload): Request
     {
         return new Request([], [], [], [], [], [], (string) \json_encode($payload));
+    }
+
+    /**
+     * @param array<string, string> $query
+     */
+    private function queryRequest(array $query): Request
+    {
+        return new Request($query);
     }
 }

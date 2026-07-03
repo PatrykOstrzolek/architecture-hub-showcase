@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'exercise_attempt')]
 #[ORM\Index(columns: ['exercise_uuid'], name: 'idx_exercise_attempt_exercise_uuid')]
 #[ORM\Index(columns: ['session_id'], name: 'idx_exercise_attempt_session_id')]
+#[ORM\Index(columns: ['created_at'], name: 'idx_exercise_attempt_created_at')]
 class Attempt
 {
     #[ORM\Id]

@@ -19,16 +19,37 @@ interface QuestionSetRepositoryInterface
     public function findWithQuestions(int $id): ?QuestionSet;
 
     /**
-     * @return list<QuestionSet>
-     */
-    public function findAll(): array;
-
-    /**
      * @param list<int> $ids
      *
      * @return list<QuestionSet>
      */
     public function findByIds(array $ids): array;
+
+    /**
+     * Bounded, ordered (id DESC) page of QuestionSets — used by the admin
+     * list path when no `ids` filter is present. Replaces the previous
+     * unbounded findAll() call on that path.
+     *
+     * @return list<QuestionSet>
+     */
+    public function findPaginated(int $page, int $limit): array;
+
+    /**
+     * Total QuestionSet count, unfiltered — used to compute PaginatedRepresentation's
+     * total/pages alongside findPaginated().
+     */
+    public function count(): int;
+
+    /**
+     * Ids of every QuestionSet that references the given Question, via the
+     * QuestionSetItem join entity — a Question can appear in more than one
+     * QuestionSet, so this drives cache invalidation from QuestionController
+     * (Requirement 5): editing/removing a Question must invalidate every
+     * QuestionSet that includes it, not just one.
+     *
+     * @return list<int>
+     */
+    public function findQuestionSetIdsContaining(int $questionId): array;
 
     public function save(QuestionSet $questionSet): void;
 

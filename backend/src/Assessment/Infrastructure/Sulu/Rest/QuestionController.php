@@ -7,11 +7,14 @@ namespace App\Assessment\Infrastructure\Sulu\Rest;
 use App\Assessment\Domain\Model\Option;
 use App\Assessment\Domain\Model\Question;
 use App\Assessment\Domain\Repository\QuestionRepositoryInterface;
+use App\Assessment\Domain\Repository\QuestionSetRepositoryInterface;
+use App\Assessment\Infrastructure\Cache\QuestionSetCacheKey;
 use Sulu\Component\Rest\ListBuilder\CollectionRepresentation;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Cache\CacheInterface;
 
 /**
  * Admin CRUD for the "Questions" resource — a plain Symfony controller
@@ -23,24 +26,42 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 readonly class QuestionController
 {
-    public function __construct(private QuestionRepositoryInterface $questions)
-    {
+    use BuildsPaginatedRepresentation;
+
+    public function __construct(
+        private QuestionRepositoryInterface $questions,
+        private QuestionSetRepositoryInterface $questionSets,
+        private CacheInterface $cache,
+    ) {
     }
 
     #[Route('/admin/api/questions', name: 'app.admin_api.questions.list', methods: ['GET'])]
     public function cgetAction(Request $request): JsonResponse
     {
         $ids = IdListQueryParser::parse($request->query->get('ids', ''));
-        $questions = [] !== $ids ? $this->questions->findByIds($ids) : $this->questions->findAll();
-        $items = \array_map($this->toListItem(...), $questions);
+        if ([] !== $ids) {
+            $items = \array_map($this->toListItem(...), $this->questions->findByIds($ids));
 
-        return new JsonResponse((new CollectionRepresentation($items, 'questions'))->toArray());
+            return new JsonResponse((new CollectionRepresentation($items, 'questions'))->toArray());
+        }
+
+        $representation = $this->buildPaginatedRepresentation(
+            $request,
+            'questions',
+            fn (int $page, int $limit): array => \array_map(
+                $this->toListItem(...),
+                $this->questions->findPaginated($page, $limit),
+            ),
+            fn (): int => $this->questions->count(),
+        );
+
+        return new JsonResponse($representation->toArray());
     }
 
     #[Route('/admin/api/questions/{id}', name: 'app.admin_api.questions.get', methods: ['GET'])]
     public function getAction(int $id): JsonResponse
     {
-        $question = $this->questions->find($id);
+        $question = $this->questions->findWithOptions($id);
         if (null === $question) {
             return new JsonResponse(['error' => 'Question not found.'], 404);
         }
@@ -66,7 +87,7 @@ readonly class QuestionController
     #[Route('/admin/api/questions/{id}', name: 'app.admin_api.questions.put', methods: ['PUT'])]
     public function putAction(int $id, Request $request): JsonResponse
     {
-        $question = $this->questions->find($id);
+        $question = $this->questions->findWithOptions($id);
         if (null === $question) {
             return new JsonResponse(['error' => 'Question not found.'], 404);
         }
@@ -82,6 +103,7 @@ readonly class QuestionController
         );
         $this->applyOptions($question, $data['options'] ?? []);
         $this->questions->save($question);
+        $this->invalidateQuestionSetsCache($this->questionSets->findQuestionSetIdsContaining($id));
 
         return new JsonResponse($this->toDetail($question));
     }
@@ -94,9 +116,29 @@ readonly class QuestionController
             return new JsonResponse(['error' => 'Question not found.'], 404);
         }
 
+        // Look up affected QuestionSets BEFORE remove(): assessment_question_set_item.question_id
+        // is ON DELETE CASCADE, so the join rows findQuestionSetIdsContaining() needs are gone
+        // as soon as the DELETE runs — invalidating after remove() would silently do nothing.
+        $questionSetIds = $this->questionSets->findQuestionSetIdsContaining($id);
         $this->questions->remove($question);
+        $this->invalidateQuestionSetsCache($questionSetIds);
 
         return new Response(status: 204);
+    }
+
+    /**
+     * A Question can belong to more than one QuestionSet — every QuestionSet
+     * referencing it must have its headless-resolved cache entry dropped,
+     * not just the one directly edited (see Requirement 5). Not called from
+     * postAction(): a newly-created Question has no QuestionSetItem rows yet.
+     *
+     * @param list<int> $questionSetIds
+     */
+    private function invalidateQuestionSetsCache(array $questionSetIds): void
+    {
+        foreach ($questionSetIds as $questionSetId) {
+            $this->cache->delete(QuestionSetCacheKey::for($questionSetId));
+        }
     }
 
     private function applyOptions(Question $question, mixed $rawOptions): void

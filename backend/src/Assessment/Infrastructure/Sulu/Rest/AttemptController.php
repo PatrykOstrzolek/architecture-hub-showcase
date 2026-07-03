@@ -6,8 +6,8 @@ namespace App\Assessment\Infrastructure\Sulu\Rest;
 
 use App\Assessment\Domain\Model\Attempt;
 use App\Assessment\Domain\Repository\AttemptRepositoryInterface;
-use Sulu\Component\Rest\ListBuilder\CollectionRepresentation;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -19,16 +19,26 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 readonly class AttemptController
 {
+    use BuildsPaginatedRepresentation;
+
     public function __construct(private AttemptRepositoryInterface $attempts)
     {
     }
 
     #[Route('/admin/api/attempts', name: 'app.admin_api.attempts.list', methods: ['GET'])]
-    public function cgetAction(): JsonResponse
+    public function cgetAction(Request $request): JsonResponse
     {
-        $items = \array_map($this->toListItem(...), $this->attempts->findAll());
+        $representation = $this->buildPaginatedRepresentation(
+            $request,
+            'attempts',
+            fn (int $page, int $limit): array => \array_map(
+                $this->toListItem(...),
+                $this->attempts->findPaginated($page, $limit),
+            ),
+            fn (): int => $this->attempts->count(),
+        );
 
-        return new JsonResponse((new CollectionRepresentation($items, 'attempts'))->toArray());
+        return new JsonResponse($representation->toArray());
     }
 
     #[Route('/admin/api/attempts/{id}', name: 'app.admin_api.attempts.delete', methods: ['DELETE'])]

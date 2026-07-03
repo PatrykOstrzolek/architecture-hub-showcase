@@ -8,11 +8,13 @@ use App\Assessment\Domain\Model\Question;
 use App\Assessment\Domain\Model\QuestionSet;
 use App\Assessment\Domain\Repository\QuestionRepositoryInterface;
 use App\Assessment\Domain\Repository\QuestionSetRepositoryInterface;
+use App\Assessment\Infrastructure\Cache\QuestionSetCacheKey;
 use Sulu\Component\Rest\ListBuilder\CollectionRepresentation;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Cache\CacheInterface;
 
 /**
  * Admin CRUD for the "Question Sets" resource. Save receives an ordered
@@ -24,9 +26,12 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 readonly class QuestionSetController
 {
+    use BuildsPaginatedRepresentation;
+
     public function __construct(
         private QuestionSetRepositoryInterface $questionSets,
         private QuestionRepositoryInterface $questions,
+        private CacheInterface $cache,
     ) {
     }
 
@@ -34,10 +39,23 @@ readonly class QuestionSetController
     public function cgetAction(Request $request): JsonResponse
     {
         $ids = IdListQueryParser::parse($request->query->get('ids', ''));
-        $questionSets = [] !== $ids ? $this->questionSets->findByIds($ids) : $this->questionSets->findAll();
-        $items = \array_map($this->toListItem(...), $questionSets);
+        if ([] !== $ids) {
+            $items = \array_map($this->toListItem(...), $this->questionSets->findByIds($ids));
 
-        return new JsonResponse((new CollectionRepresentation($items, 'question_sets'))->toArray());
+            return new JsonResponse((new CollectionRepresentation($items, 'question_sets'))->toArray());
+        }
+
+        $representation = $this->buildPaginatedRepresentation(
+            $request,
+            'question_sets',
+            fn (int $page, int $limit): array => \array_map(
+                $this->toListItem(...),
+                $this->questionSets->findPaginated($page, $limit),
+            ),
+            fn (): int => $this->questionSets->count(),
+        );
+
+        return new JsonResponse($representation->toArray());
     }
 
     #[Route('/admin/api/question-sets/{id}', name: 'app.admin_api.question_sets.get', methods: ['GET'])]
@@ -63,6 +81,11 @@ readonly class QuestionSetController
         $this->applyQuestions($questionSet, $data['questionIds'] ?? []);
         $this->questionSets->save($questionSet);
 
+        $newId = $questionSet->getId();
+        if (null !== $newId) {
+            $this->cache->delete(QuestionSetCacheKey::for($newId));
+        }
+
         return new JsonResponse($this->toDetail($questionSet));
     }
 
@@ -82,6 +105,7 @@ readonly class QuestionSetController
         $questionSet->update(\is_string($data['title'] ?? null) ? $data['title'] : $questionSet->getTitle());
         $this->applyQuestions($questionSet, $data['questionIds'] ?? []);
         $this->questionSets->save($questionSet);
+        $this->cache->delete(QuestionSetCacheKey::for($id));
 
         return new JsonResponse($this->toDetail($questionSet));
     }
@@ -95,6 +119,7 @@ readonly class QuestionSetController
         }
 
         $this->questionSets->remove($questionSet);
+        $this->cache->delete(QuestionSetCacheKey::for($id));
 
         return new Response(status: 204);
     }
