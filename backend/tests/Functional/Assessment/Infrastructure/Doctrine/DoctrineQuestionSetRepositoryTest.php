@@ -42,7 +42,9 @@ final class DoctrineQuestionSetRepositoryTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $this->entityManager = $entityManager;
     }
 
     protected function tearDown(): void
