@@ -73,8 +73,8 @@
     url: http://127.0.0.1:8000/admin/
     status_code: [200, 301, 302]
     follow_redirects: none
-  register: _health
-  until: _health.status in [200, 301, 302]
+  register: app__health
+  until: app__health.status in [200, 301, 302]
   retries: 12
   delay: 5
 

@@ -16,12 +16,10 @@
     architectures: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
     signed_by: https://download.docker.com/linux/ubuntu/gpg
     state: present
-  register: docker_repo
+  notify: Update apt cache
 
-- name: Update apt cache after adding Docker repo
-  ansible.builtin.apt:
-    update_cache: true
-  when: docker_repo.changed
+- name: Flush handlers so the apt cache is current before installing Docker
+  ansible.builtin.meta: flush_handlers
 
 - name: Install Docker CE and Compose plugin
   ansible.builtin.apt:
