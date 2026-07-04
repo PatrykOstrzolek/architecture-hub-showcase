@@ -156,5 +156,6 @@ Rich-text HTML from Sulu is sanitized with `sanitize-html` before rendering via 
 
 - **PHP memory**: 1 G required for composer install, PHPStan, and cache warmup. Set via `ini-values` in CI, via `-d` flag locally.
 - **Headless architecture**: Vercel calls Sulu over the public internet via `api.yourdomain.com`. The admin subdomain is separate and carries the Sulu admin UI.
-- **Stateful volumes**: Sulu media uploads are persisted in a named Docker volume (`uploads`) and survive container restarts and image updates.
+- **Stateful volumes**: Sulu media uploads are persisted in a named Docker volume (`uploads`) and survive container restarts and image updates. Neither `uploads` nor `db_data` has an automated backup — a host/disk failure loses both with no recovery path.
+- **Search index is not persisted**: `SEAL_DSN` (`loupe:///var/www/html/var/indexes`) writes inside the container's own filesystem, not a mounted volume. It's rebuilt from nothing on every deploy (`recreate: always`), and there is no reindex step anywhere in the CD pipeline — search results may be stale or empty until Sulu's own indexing catches up on content access/save.
 - **Content freshness**: Next.js caches Sulu responses for 60 seconds (Data Cache). See [ADR 0008](../architecture/adrs/0008-nextjs-caching-strategy.md).
