@@ -52,6 +52,12 @@
   retries: 12
   delay: 5
 
+- name: Run database migrations
+  command: >
+    docker exec architecture-hub-backend-1
+    php -d memory_limit=1G bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+  become_user: "{{ app_user }}"
+
 - name: Warm Symfony cache
   command: >
     docker exec architecture-hub-backend-1
