@@ -63,7 +63,11 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
 1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA (priority 700) + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
 2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory:
    - Prunes unused Docker images (frees disk before pulling)
-   - Templates `.env`, pulls the new image, recreates containers
+   - Templates `.env`, pulls the new backend image
+   - Runs pending `doctrine:migrations:migrate` against the new image in a
+     one-off container *before* cutover, bounded by a 300s timeout (async/poll)
+     — so schema/data changes land before the new code goes live, not after
+   - Recreates containers with the new image
    - Health-checks `http://127.0.0.1:8000/admin/` (12 retries × 5 s)
    - Warms the Symfony cache inside the running container
 
@@ -170,6 +174,31 @@ ansible-playbook ansible/playbooks/deploy.yml \
   --vault-password-file ~/.vault_pass \
   -e "ansible_host=YOUR_VPS_IP image_tag=<git-sha>"
 ```
+
+### Rolling back a bad deploy
+
+Re-run the same command with the previous known-good commit SHA as `image_tag`
+(every CI-built image is tagged with its commit SHA — find one via `git log
+--oneline` on `main`, or by browsing package versions in GHCR). The deploy
+role runs migrations before cutting over to the new container (see §3), so
+rolling back the image tag re-deploys old code against whatever schema is
+currently in the database.
+
+**This does not roll back the database.** Doctrine migrations are
+forward-only in this pipeline — there is no automated `doctrine:migrations:
+migrate down`. Two cases:
+
+- **Bad code, no new migration involved:** rolling back the image tag is
+  sufficient.
+- **Bad migration:** prefer fixing forward with a new migration that corrects
+  the problem, rather than manually running a migration's `down()` against
+  production. If the migration must be reverted, do it manually and
+  deliberately (`docker exec architecture-hub-backend-1 php bin/console
+  doctrine:migrations:migrate <previous-version> --no-interaction`), verify
+  the resulting schema, and only then roll back the image tag.
+
+There is no automated pre-migration backup — see [GitHub issue
+#3](https://github.com/PatrykOstrzolek/architecture-hub-showcase/issues/3).
 
 ## 9. Pre-commit Hooks
 

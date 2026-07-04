@@ -34,6 +34,30 @@
     images_filters:
       dangling: false
 
+- name: Pull new backend image
+  community.docker.docker_compose_v2_pull:
+    project_src: "{{ app_dir }}"
+    services:
+      - backend
+
+# Migrates against the new image *before* it takes traffic (the `db` service
+# keeps running throughout via restart:unless-stopped, so this only needs
+# --no-deps to avoid touching it). Prevents a window where the new code is
+# already live but its schema/data dependencies aren't there yet — see
+# https://github.com/PatrykOstrzolek/architecture-hub-showcase/issues/2.
+# async/poll bounds a hung migration (e.g. lock contention) instead of
+# hanging the whole deploy indefinitely.
+- name: Run database migrations against the new image before cutover
+  community.docker.docker_compose_v2_run:
+    project_src: "{{ app_dir }}"
+    service: backend
+    command: php -d memory_limit=1G bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+    cleanup: true
+    no_deps: true
+  become_user: "{{ app_user }}"
+  async: 300
+  poll: 5
+
 - name: Deploy and recreate services with latest image
   community.docker.docker_compose_v2:
     project_src: "{{ app_dir }}"
@@ -51,12 +75,6 @@
   until: _health.status in [200, 301, 302]
   retries: 12
   delay: 5
-
-- name: Run database migrations
-  command: >
-    docker exec architecture-hub-backend-1
-    php -d memory_limit=1G bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-  become_user: "{{ app_user }}"
 
 - name: Warm Symfony cache
   command: >
