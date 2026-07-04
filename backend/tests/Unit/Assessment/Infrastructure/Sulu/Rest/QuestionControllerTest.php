@@ -288,11 +288,11 @@ final class QuestionControllerTest extends TestCase
         $callOrder = [];
 
         $this->questions->method('find')->with(1)->willReturn($question);
-        $this->questions->method('remove')->willReturnCallback(function () use (&$callOrder): void {
+        $this->questions->method('remove')->willReturnCallback(static function () use (&$callOrder): void {
             $callOrder[] = 'remove';
         });
         $this->questionSets->method('findQuestionSetIdsContaining')->willReturnCallback(
-            function () use (&$callOrder): array {
+            static function () use (&$callOrder): array {
                 $callOrder[] = 'findQuestionSetIdsContaining';
 
                 return [3];

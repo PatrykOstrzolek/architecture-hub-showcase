@@ -32,7 +32,7 @@ trait BuildsPaginatedRepresentation
 
     /**
      * @param callable(int $page, int $limit): list<mixed> $fetchPage returns the bounded, ordered page of items
-     * @param callable(): int                               $countAll  returns the total unfiltered count
+     * @param callable(): int $countAll returns the total unfiltered count
      */
     private function buildPaginatedRepresentation(
         Request $request,
