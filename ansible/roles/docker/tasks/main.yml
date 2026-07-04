@@ -1,12 +1,13 @@
+---
 - name: Install Docker dependencies
-  apt:
+  ansible.builtin.apt:
     name:
       - ca-certificates
       - gnupg
     state: present
 
 - name: Add Docker apt repository (deb822 format)
-  deb822_repository:
+  ansible.builtin.deb822_repository:
     name: docker
     types: deb
     uris: https://download.docker.com/linux/ubuntu
@@ -15,15 +16,13 @@
     architectures: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
     signed_by: https://download.docker.com/linux/ubuntu/gpg
     state: present
-  register: docker_repo
+  notify: Update apt cache
 
-- name: Update apt cache after adding Docker repo
-  apt:
-    update_cache: true
-  when: docker_repo.changed
+- name: Flush handlers so the apt cache is current before installing Docker
+  ansible.builtin.meta: flush_handlers
 
 - name: Install Docker CE and Compose plugin
-  apt:
+  ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
@@ -32,13 +31,13 @@
     state: present
 
 - name: Add deploy user to docker group
-  user:
+  ansible.builtin.user:
     name: "{{ app_user }}"
     groups: docker
     append: true
 
 - name: Enable and start Docker
-  systemd:
+  ansible.builtin.systemd:
     name: docker
     enabled: true
     state: started
