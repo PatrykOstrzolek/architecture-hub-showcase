@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
 
 # Frontend — prettier + eslint on staged TS/TSX files
-npx lint-staged
+# (git always runs hooks with cwd at the repo root, so lint-staged needs to be
+# run from frontend/ to resolve its locally-installed prettier/eslint instead
+# of npx fetching a fresh, dependency-less copy from the registry)
+(cd frontend && npx lint-staged)
 
 # Backend — CS Fixer + PHPStan if any PHP files are staged
 STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.php$' || true)

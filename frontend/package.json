@@ -11,7 +11,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "git config core.hooksPath frontend/.husky || true"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
