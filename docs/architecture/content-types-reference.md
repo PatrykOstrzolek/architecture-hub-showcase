@@ -2,6 +2,9 @@
 
 How each Sulu content type is serialized to JSON by the **SuluHeadlessBundle**, so
 the Next.js frontend knows exactly what shape to expect per template property.
+For the admin UI/platform side (nav map, search index scope, permission
+contexts, media system folders) see
+[sulu-admin-reference.md](sulu-admin-reference.md).
 
 > **Source of truth:** the resolvers installed in
 > `backend/vendor/sulu/headless-bundle/Content/`. This document mirrors that code
