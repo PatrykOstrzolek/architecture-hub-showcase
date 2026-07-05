@@ -3,7 +3,7 @@
 *   **Status**: Accepted
 *   **Date**: 2026-07-02
 *   **Deciders**: Patryk O
-*   **Context Docs**: [Question Sets](../../product/features/question-sets.md), [Exercises](../../product/features/exercises.md), [ADR 0011](0011-exercise-page-template.md), [ADR 0012](0012-assessment-bounded-context.md)
+*   **Context Docs**: [Question Sets](../../product/features/question-sets.md), [Exercises](../../product/features/exercises.md), [ADR 0011](0011-exercise-page-template.md), [ADR 0012](0012-assessment-bounded-context.md), [Sulu Admin Reference](../sulu-admin-reference.md), [Assessment Domain Model](../assessment-domain-model.md)
 
 ## Context
 
