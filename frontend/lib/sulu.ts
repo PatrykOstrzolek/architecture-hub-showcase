@@ -209,6 +209,15 @@ export interface SuluTaxonomySuggestions {
 class SuluNotFoundError extends Error {}
 class SuluUnavailableError extends Error {}
 
+/**
+ * Gateway-level statuses seen while the backend container is mid-restart
+ * during its own deploy (single container, recreate-in-place — see
+ * ansible/roles/app/tasks/main.yml), not an application error. Treated the
+ * same as a network-level failure so a deploy blip degrades gracefully
+ * instead of surfacing the generic error boundary.
+ */
+const GATEWAY_UNAVAILABLE_STATUSES = new Set([502, 503, 504])
+
 async function suluFetch<T>(
   path: string,
   revalidate = REVALIDATE_SECONDS
@@ -226,6 +235,11 @@ async function suluFetch<T>(
 
   if (res.status === 404) {
     throw new SuluNotFoundError(`Sulu content not found: ${path}`)
+  }
+  if (GATEWAY_UNAVAILABLE_STATUSES.has(res.status)) {
+    throw new SuluUnavailableError(
+      `Sulu backend returned ${res.status}: ${path}`
+    )
   }
   if (!res.ok) {
     throw new Error(`Sulu request failed (${res.status}): ${path}`)
@@ -307,18 +321,23 @@ export async function getNavigation(
 /** Full-text search across the website index. */
 export async function search(query: string): Promise<SuluSearchHit[]> {
   const params = new URLSearchParams({ q: query })
-  const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
-    `/api/search?${params}`,
-    0
-  )
-  // Sulu/seal can return duplicate hits when multiple indices are configured;
-  // deduplicate by URL before returning.
-  const seen = new Set<string>()
-  return data._embedded.hits.filter((hit) => {
-    if (seen.has(hit.url)) return false
-    seen.add(hit.url)
-    return true
-  })
+  try {
+    const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
+      `/api/search?${params}`,
+      0
+    )
+    // Sulu/seal can return duplicate hits when multiple indices are configured;
+    // deduplicate by URL before returning.
+    const seen = new Set<string>()
+    return data._embedded.hits.filter((hit) => {
+      if (seen.has(hit.url)) return false
+      seen.add(hit.url)
+      return true
+    })
+  } catch (err) {
+    if (err instanceof SuluUnavailableError) return []
+    throw err
+  }
 }
 
 /** Articles filtered by category key or tag name. */
@@ -326,10 +345,15 @@ export async function searchByTaxonomy(
   filter: { category: string } | { tag: string }
 ): Promise<SuluSearchHit[]> {
   const params = new URLSearchParams(filter)
-  const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
-    `/api/articles?${params}`
-  )
-  return data._embedded.hits
+  try {
+    const data = await suluFetch<{ _embedded: { hits: SuluSearchHit[] } }>(
+      `/api/articles?${params}`
+    )
+    return data._embedded.hits
+  } catch (err) {
+    if (err instanceof SuluUnavailableError) return []
+    throw err
+  }
 }
 
 export interface ArticlesPage {
