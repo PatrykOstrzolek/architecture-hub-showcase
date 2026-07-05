@@ -112,6 +112,7 @@ export default async function Page({
       return (
         <ArticleView
           content={data.content as unknown as ArticleContent}
+          path={currentPath}
           authored={data.authored}
           learningPath={learningPath}
           relatedArticles={relatedArticles}

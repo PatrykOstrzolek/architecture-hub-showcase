@@ -3,6 +3,7 @@ import { mediaUrl, type SuluSearchHit } from "@/lib/sulu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BlockRenderer } from "./block-renderer"
 import type { ArticleContent, LearningPathContext } from "./types"
+import { SITE_URL } from "@/lib/site"
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null
@@ -13,13 +14,40 @@ function formatDate(iso: string | null): string | null {
   })
 }
 
+/**
+ * Article JSON-LD — see ADR-0015. No image: not part of ArticleContent today.
+ * `path` is the resolved page path (from the caller's own routing, not
+ * `content.url` — the article template's `page_tree_route` URL never
+ * populates `content.url`, only `view.url`, which isn't passed down here).
+ */
+function articleJsonLd(
+  content: ArticleContent,
+  authored: string | null,
+  path: string
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: content.title,
+    description: content.summary || undefined,
+    url: `${SITE_URL}${path}`,
+    datePublished: authored || undefined,
+    keywords: content.tags?.length ? content.tags.join(", ") : undefined,
+    author: content.author?.fullName
+      ? { "@type": "Person", name: content.author.fullName }
+      : undefined,
+  }
+}
+
 export function ArticleView({
   content,
+  path,
   authored,
   learningPath,
   relatedArticles,
 }: {
   content: ArticleContent
+  path: string
   authored: string | null
   learningPath?: LearningPathContext
   relatedArticles?: SuluSearchHit[]
@@ -29,6 +57,15 @@ export function ArticleView({
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            articleJsonLd(content, authored, path)
+          ).replace(/</g, "\\u003c"),
+        }}
+      />
+
       {/* Breadcrumb */}
       <div className="mb-10">
         {learningPath ? (

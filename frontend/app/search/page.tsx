@@ -14,10 +14,13 @@ export async function generateMetadata({
   }>
 }): Promise<Metadata> {
   const { q, category, tag, label } = await searchParams
-  if (category) return { title: label ?? category }
-  if (tag) return { title: label ?? tag }
-  if (q?.trim()) return { title: `Results for "${q.trim()}"` }
-  return { title: "Search" }
+  // Query-param-driven results page — kept out of the index via robots.ts too
+  // (see ADR-0015), but a direct noindex here also covers any inbound link.
+  const robots = { index: false, follow: true }
+  if (category) return { title: label ?? category, robots }
+  if (tag) return { title: label ?? tag, robots }
+  if (q?.trim()) return { title: `Results for "${q.trim()}"`, robots }
+  return { title: "Search", robots }
 }
 
 export default async function SearchPage({

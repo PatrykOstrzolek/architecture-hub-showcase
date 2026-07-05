@@ -7,8 +7,10 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { DraftModeBanner } from "@/components/draft-mode-banner"
 import { cn } from "@/lib/utils"
+import { SITE_URL } from "@/lib/site"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Architecture Hub",
     template: "%s | Architecture Hub",
