@@ -53,9 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     articleEntries(),
   ])
 
-  const authorEntries: MetadataRoute.Sitemap = (
-    authors?.content.authors ?? []
-  )
+  const authorEntries: MetadataRoute.Sitemap = (authors?.content.authors ?? [])
     .filter((author) => author.content.url)
     .map((author) => ({ url: `${SITE_URL}${author.content.url}` }))
 
