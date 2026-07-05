@@ -1,5 +1,6 @@
+---
 - name: Create application directory
-  file:
+  ansible.builtin.file:
     path: "{{ app_dir }}"
     state: directory
     owner: "{{ app_user }}"
@@ -13,7 +14,7 @@
     password: "{{ vault_ghcr_token }}"
 
 - name: Deploy docker-compose file
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
     dest: "{{ app_dir }}/docker-compose.yml"
     owner: "{{ app_user }}"
@@ -21,7 +22,7 @@
     mode: "0644"
 
 - name: Template .env file
-  template:
+  ansible.builtin.template:
     src: .env.j2
     dest: "{{ app_dir }}/.env"
     owner: "{{ app_user }}"
@@ -54,6 +55,7 @@
     command: php -d memory_limit=1G bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
     cleanup: true
     no_deps: true
+  become: true
   become_user: "{{ app_user }}"
   async: 300
   poll: 5
@@ -67,17 +69,19 @@
     remove_orphans: true
 
 - name: Wait for backend to respond
-  uri:
+  ansible.builtin.uri:
     url: http://127.0.0.1:8000/admin/
     status_code: [200, 301, 302]
     follow_redirects: none
-  register: _health
-  until: _health.status in [200, 301, 302]
+  register: app__health
+  until: app__health.status in [200, 301, 302]
   retries: 12
   delay: 5
 
 - name: Warm Symfony cache
-  command: >
+  ansible.builtin.command: >
     docker exec architecture-hub-backend-1
     php -d memory_limit=1G bin/console cache:warmup --env=prod
+  become: true
   become_user: "{{ app_user }}"
+  changed_when: true

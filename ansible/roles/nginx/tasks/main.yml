@@ -1,23 +1,24 @@
+---
 - name: Install nginx
-  apt:
+  ansible.builtin.apt:
     name:
       - nginx
     state: present
 
 - name: Remove default nginx site
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
 
 - name: Deploy virtual host config
-  template:
+  ansible.builtin.template:
     src: app.conf.j2
     dest: /etc/nginx/sites-available/architecture-hub
     mode: "0644"
   notify: Reload nginx
 
 - name: Enable site
-  file:
+  ansible.builtin.file:
     src: /etc/nginx/sites-available/architecture-hub
     dest: /etc/nginx/sites-enabled/architecture-hub
     state: link
@@ -25,7 +26,7 @@
   notify: Reload nginx
 
 - name: Enable and start nginx
-  systemd:
+  ansible.builtin.systemd:
     name: nginx
     enabled: true
     state: started
