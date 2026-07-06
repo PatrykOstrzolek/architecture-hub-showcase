@@ -28,6 +28,7 @@ services:
       NEXT_REVALIDATE_URL: ${NEXT_REVALIDATE_URL}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET}
       PREVIEW_SECRET: ${PREVIEW_SECRET}
+      PHP_MEMORY_LIMIT: 1G
     mem_limit: 768m
     volumes:
       - uploads:/var/www/html/public/uploads

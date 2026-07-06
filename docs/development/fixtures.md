@@ -8,10 +8,10 @@ How to create Doctrine fixtures that publish content through the Sulu 3.x conten
 
 ```bash
 # Step 1 — full Sulu initialisation (tags/categories/contacts seeded; articles skip — homepage not yet created)
-php -d memory_limit=1G bin/console sulu:build dev
+docker compose exec php bin/console sulu:build dev
 
 # Step 2 — load articles (homepage now exists, all references resolve)
-php -d memory_limit=1G bin/console doctrine:fixtures:load --append --group=dev
+docker compose exec php bin/console doctrine:fixtures:load --append --group=dev
 ```
 
 `sulu:build dev` runs its internal `fixtures` step before the `homepage` step, so `ArticleFixture` detects the missing homepage and returns early. Step 2 re-runs all dev fixtures; the tag/category/contact fixtures are idempotent, and the article fixture now succeeds.
@@ -19,7 +19,7 @@ php -d memory_limit=1G bin/console doctrine:fixtures:load --append --group=dev
 After loading, re-index SEAL so articles appear in search:
 
 ```bash
-php -d memory_limit=1G bin/console cmsig:seal:reindex --drop
+docker compose exec php bin/console cmsig:seal:reindex --drop
 ```
 
 ---
@@ -51,6 +51,7 @@ The `--group=dev` fixtures live in `backend/src/DataFixtures/`:
 | `ContactFixture` | Jane Kowalski (second author) | ✅ `findOneBy` check |
 | `ArticleFixture` | 20 published articles from CSV | ✅ skips existing slugs; skips if homepage missing |
 | `AuthorPageFixture` | 2 published author profile pages + `/authors` listing page | ✅ skips existing slugs; skips if homepage missing |
+| `ExerciseFixture` | 3 `QuestionSet`s (Doctrine entities, ADR-0014) + one published exercise page per learning path, each linked to its `QuestionSet` | ✅ upserts by `QuestionSet.title`; removes and rebuilds that set's `Question`/`Option` rows on re-run |
 | `LearningPathFixture` | 3 learning path pages + `/learning-paths` listing page | ✅ skips existing slugs; skips if homepage missing |
 
 `AuthorPageFixture` uses `CreatePageMessage` + `ApplyWorkflowTransitionPageMessage` (same bus pattern as articles, but from `Sulu\Page\Application\Message`). Pages are routed under `/authors/` and use the `author` template. They are **Sulu Pages, not Articles**, so they never appear in `/api/articles` listings.
@@ -198,20 +199,20 @@ class MyArticleFixture extends Fixture implements FixtureGroupInterface
 
 ```bash
 # contacts (authors)
-php bin/console doctrine:query:sql "SELECT id, firstname, lastname FROM co_contacts"
+docker compose exec php bin/console doctrine:query:sql "SELECT id, firstname, lastname FROM co_contacts"
 
 # tags
-php bin/console doctrine:query:sql "SELECT id, name FROM ta_tags"
+docker compose exec php bin/console doctrine:query:sql "SELECT id, name FROM ta_tags"
 
 # categories
-php bin/console doctrine:query:sql \
+docker compose exec php bin/console doctrine:query:sql \
   "SELECT c.id, ct.translation FROM ca_categories c \
    JOIN ca_category_translations ct ON ct.idcategories = c.id \
    WHERE ct.locale = 'en'"
 
 # parent page UUID for articles at root level
-php bin/console doctrine:query:sql "SELECT resource_id FROM ro_routes WHERE slug = '/'"
+docker compose exec php bin/console doctrine:query:sql "SELECT resource_id FROM ro_routes WHERE slug = '/'"
 
 # existing article routes (to avoid slug collisions)
-php bin/console doctrine:query:sql "SELECT slug FROM ro_routes WHERE resource_key = 'articles'"
+docker compose exec php bin/console doctrine:query:sql "SELECT slug FROM ro_routes WHERE resource_key = 'articles'"
 ```

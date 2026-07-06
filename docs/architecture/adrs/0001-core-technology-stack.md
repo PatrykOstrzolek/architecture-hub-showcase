@@ -12,7 +12,7 @@ We have decided to adopt the following core stack:
 *   **Backend**: PHP with Sulu CMS (leveraging its headless capabilities).
 *   **Frontend**: TypeScript with React (using Next.js App Router for Server Components).
 *   **Styling**: Tailwind CSS and shadcn/ui.
-*   **Environment**: Mise for tool version management, Docker/Colima for containerization.
+*   **Environment**: Mise for tool version management, Docker for containerization.
 
 ## Consequences
 ### Positive

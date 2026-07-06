@@ -9,6 +9,7 @@ services:
       - "8000:8080"
     environment:
       PHP_OPCACHE_ENABLE: 1
+      PHP_MEMORY_LIMIT: 1G
     volumes:
       - .:/var/www/html
       - ./docker/nginx/server-opts.d/sulu-homepage-json.conf:/etc/nginx/server-opts.d/sulu-homepage-json.conf:ro

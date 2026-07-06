@@ -25,20 +25,26 @@ always ask for confirmation. Never delete project files after a failed install �
 Verify tool availability before starting:
 
 ```bash
-which php && which composer && which docker && which colima && which npx && which npm
+which docker && which colima && which npx && which npm
 ```
 
 If a tool is missing, ask the user — do not guess paths or install automatically.
 
-### PHP Memory Limit
+### Backend commands run inside Docker, not on the host
 
-Default is 128M — insufficient for Symfony/Sulu heavy operations. Always use 1G for:
+There is no host PHP or Composer install for this project. Every `php`/`composer`/`bin/console` invocation must go through the running `php` container:
 
 ```bash
-php -d memory_limit=1G bin/console cache:clear
-php -d memory_limit=1G bin/console cache:warmup
-php -d memory_limit=1G $(which composer) install
+cd backend
+docker compose exec php composer install
+docker compose exec php bin/console cache:clear
 ```
+
+Bare `php ...`/`composer ...` on the host will fail (`command not found`) — do not attempt them.
+
+### PHP Memory Limit
+
+Set via `PHP_MEMORY_LIMIT=1G` container env var (`backend/compose.override.yaml` for dev, `docker-compose.prod.yml` for prod) — applies to every `php`/`composer` invocation inside the container automatically. Do not reintroduce inline `-d memory_limit=1G` flags on individual commands.
 
 ### Docker
 

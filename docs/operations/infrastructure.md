@@ -4,21 +4,21 @@
 
 | Environment | Purpose | Runtime |
 |---|---|---|
-| **Development** | Local development | Docker / Colima (macOS) |
+| **Development** | Local development | Docker (any runtime) |
 | **Production** | Live application | VPS (Ubuntu) + Docker CE for backend; Vercel for frontend |
 
 ## 2. Local Development Stack
 
-- **Container runtime**: Docker via [Colima](https://github.com/abiosoft/colima)
+- **Container runtime**: any local Docker (Docker Desktop, Docker Engine, etc.)
 - **Backend image**: `serversideup/php:8.5-fpm-nginx` with `intl`, `gd`, `apcu` extensions
 - **PHP version**: 8.5 (pinned in `backend/docker/Dockerfile`)
 - **Node version**: 24
 
-PHP memory limit for heavy operations (composer install, cache warmup):
+PHP and Composer are not installed on the host — every `php`/`composer` invocation runs inside the `php` container via `docker compose exec php ...`. Its memory limit is set via the `PHP_MEMORY_LIMIT: 1G` container env var in `backend/compose.override.yaml`, so it applies automatically — no inline `-d` flag needed:
 
 ```bash
-php -d memory_limit=1G bin/console cache:clear
-php -d memory_limit=1G $(which composer) install
+docker compose exec php bin/console cache:clear
+docker compose exec php composer install
 ```
 
 ## 3. Production Stack
@@ -154,7 +154,7 @@ Rich-text HTML from Sulu is sanitized with `sanitize-html` before rendering via 
 
 ## 7. Key Constraints
 
-- **PHP memory**: 1 G required for composer install, PHPStan, and cache warmup. Set via `ini-values` in CI, via `-d` flag locally.
+- **PHP memory**: 1 G required for composer install, PHPStan, and cache warmup. Set via `ini-values` in CI, via the `PHP_MEMORY_LIMIT` container env var locally and in prod.
 - **Headless architecture**: Vercel calls Sulu over the public internet via `api.yourdomain.com`. The admin subdomain is separate and carries the Sulu admin UI.
 - **Stateful volumes**: Sulu media uploads are persisted in a named Docker volume (`uploads`) and survive container restarts and image updates. Neither `uploads` nor `db_data` has an automated backup — a host/disk failure loses both with no recovery path.
 - **Search index is not persisted**: `SEAL_DSN` (`loupe:///var/www/html/var/indexes`) writes inside the container's own filesystem, not a mounted volume. It's rebuilt from nothing on every deploy (`recreate: always`), and there is no reindex step anywhere in the CD pipeline — search results may be stale or empty until Sulu's own indexing catches up on content access/save.

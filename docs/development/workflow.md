@@ -30,14 +30,14 @@ Scope:
 
 Run:
 ```bash
-php -d memory_limit=1G vendor/bin/phpunit tests/Unit
+docker compose exec php vendor/bin/phpunit tests/Unit
 ```
 
 Static analysis and formatting checks are also part of the quality gate:
 
 ```bash
-php -d memory_limit=1G vendor/bin/phpstan analyse
-vendor/bin/php-cs-fixer fix --dry-run --diff
+docker compose exec php vendor/bin/phpstan analyse
+docker compose exec php vendor/bin/php-cs-fixer fix --dry-run --diff
 ```
 
 ### Frontend
