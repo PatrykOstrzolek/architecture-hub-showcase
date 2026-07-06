@@ -82,6 +82,11 @@ resource "aws_instance" "secondary" {
     volume_type = "gp3"
   }
 
+  metadata_options {
+    http_tokens   = "required" # enforce IMDSv2 — blocks the SSRF-to-credential-theft path IMDSv1 allows
+    http_endpoint = "enabled"
+  }
+
   tags = merge(local.tags, {
     Name = "architecture-hub-secondary"
   })
