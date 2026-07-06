@@ -40,25 +40,23 @@ class AssessmentAdmin extends Admin
 
     public function configureNavigationItems(NavigationItemCollection $navigationItemCollection): void
     {
-        // Plain readable strings, not translation keys — this project has no
-        // translations/ domain set up for a two-screen internal admin tool,
-        // and Sulu just displays the raw string as a fallback when no
-        // translation exists, so this is the same outcome with less ceremony.
-        $assessment = new NavigationItem('Assessment');
+        // Translation keys resolved via translations/admin.en.json (domain
+        // "admin"), matching Sulu's own sulu_page.*/sulu_admin.* convention.
+        $assessment = new NavigationItem('app.assessment');
         $assessment->setPosition(40);
         $assessment->setIcon('su-pen');
 
-        $questions = new NavigationItem('Questions');
+        $questions = new NavigationItem('app.questions');
         $questions->setPosition(10);
         $questions->setView(self::QUESTION_LIST_VIEW);
         $assessment->addChild($questions);
 
-        $questionSets = new NavigationItem('Question Sets');
+        $questionSets = new NavigationItem('app.question_sets');
         $questionSets->setPosition(20);
         $questionSets->setView(self::QUESTION_SET_LIST_VIEW);
         $assessment->addChild($questionSets);
 
-        $attempts = new NavigationItem('Attempts');
+        $attempts = new NavigationItem('app.attempts');
         $attempts->setPosition(30);
         $attempts->setView(self::ATTEMPT_LIST_VIEW);
         $assessment->addChild($attempts);
@@ -77,7 +75,7 @@ class AssessmentAdmin extends Admin
             listKey: 'questions',
             formKey: 'question_details',
             path: '/questions',
-            title: 'Questions',
+            title: 'app.questions',
             titleProperty: 'text',
             listView: self::QUESTION_LIST_VIEW,
             addFormView: self::QUESTION_ADD_FORM_VIEW,
@@ -92,7 +90,7 @@ class AssessmentAdmin extends Admin
             listKey: 'question_sets',
             formKey: 'question_set_details',
             path: '/question-sets',
-            title: 'Question Sets',
+            title: 'app.question_sets',
             titleProperty: 'title',
             listView: self::QUESTION_SET_LIST_VIEW,
             addFormView: self::QUESTION_SET_ADD_FORM_VIEW,
@@ -107,7 +105,7 @@ class AssessmentAdmin extends Admin
             $this->viewBuilderFactory->createListViewBuilder(self::ATTEMPT_LIST_VIEW, '/attempts')
                 ->setResourceKey('attempts')
                 ->setListKey('attempts')
-                ->setTitle('Attempts')
+                ->setTitle('app.attempts')
                 ->addListAdapters(['table'])
                 ->addToolbarActions([new ToolbarAction('sulu_admin.delete')]),
         );

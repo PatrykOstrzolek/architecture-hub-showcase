@@ -46,8 +46,8 @@ sulu_admin:
                         list_key: questions
                         display_properties: [text]
                         icon: fa-question-circle
-                        label: "Selected questions"
-                        overlay_title: "Select questions"
+                        label: app.selected_questions
+                        overlay_title: app.select_questions
         single_selection:
             # Single — used on any page template (e.g. exercise.xml) to
             # reference one QuestionSet by id.
@@ -60,5 +60,5 @@ sulu_admin:
                         list_key: question_sets
                         display_properties: [title]
                         icon: fa-list-alt
-                        empty_text: "No question set selected"
-                        overlay_title: "Select a question set"
+                        empty_text: app.no_question_set_selected
+                        overlay_title: app.select_a_question_set

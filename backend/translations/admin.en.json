@@ -1,0 +1,10 @@
+{
+    "app.assessment": "Assessment",
+    "app.questions": "Questions",
+    "app.question_sets": "Question Sets",
+    "app.attempts": "Attempts",
+    "app.no_question_set_selected": "No question set selected",
+    "app.select_a_question_set": "Select a question set",
+    "app.selected_questions": "Selected questions",
+    "app.select_questions": "Select questions"
+}
