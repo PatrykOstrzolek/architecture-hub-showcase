@@ -6,6 +6,7 @@
   vars_files:
     - ../group_vars/all/main.yml
     - ../group_vars/all/vault.yml
+    - "../group_vars/{{ 'primary' if 'primary' in group_names else 'secondary' }}/main.yml"
 
   roles:
     - app

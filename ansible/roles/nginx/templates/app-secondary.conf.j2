@@ -1,0 +1,54 @@
+# EC2 secondary — training/failover-drill instance, no owned domain to match
+# a server_name against, so this is a single catch-all vhost merging both of
+# the primary's location allowlists (admin + api/json/media). HTTP only —
+# there's no ownable name to issue a TLS cert for, and this box is
+# operator-driven during a manual drill, not sustained public traffic. See
+# docs/operations/failover-runbook.md.
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    client_max_body_size 64M;
+    merge_slashes off;
+
+    location / {
+        return 404;
+    }
+
+    # Headless page content (*.json), REST API, media uploads, and the
+    # secret-gated draft-preview endpoint. Deliberately checked BEFORE the
+    # admin block below: nginx picks the first matching regex location in
+    # file order, and /admin/api/preview/... would otherwise be caught by
+    # the broader ^/admin regex and lose this block's stricter CSP headers.
+    location ~ (\.json$|^/(api|media)|^/admin/api/preview/) {
+        proxy_pass         http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Cross-Origin-Resource-Policy "same-origin" always;
+        add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'" always;
+    }
+
+    # Admin UI, its JS/CSS bundles, token endpoint, Symfony assets, and favicon
+    location ~ ^/(admin|build|bundles|token|favicon\.ico$) {
+        proxy_pass         http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Cross-Origin-Resource-Policy "same-origin" always;
+    }
+}

@@ -10,3 +10,7 @@ vault_app_secret: "change-me-32-char-symfony-secret"
 vault_ghcr_token: "ghp_your_github_personal_access_token"
 vault_next_revalidate_secret: "change-me-same-value-as-github-secret-REVALIDATE_SECRET"
 vault_preview_secret: "change-me-same-value-as-github-secret-PREVIEW_SECRET"
+
+# EC2 secondary (failover drill) — see docs/operations/failover-runbook.md
+vault_tailscale_authkey: "tskey-auth-xxxxx"       # reusable, non-ephemeral key from the Tailscale admin console
+vault_primary_tailscale_ip: "100.x.y.z"           # captured after first `tailscale up` on the primary — leave a placeholder until then

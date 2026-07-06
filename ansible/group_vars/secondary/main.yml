@@ -1,0 +1,3 @@
+is_primary: false
+app_user: ubuntu
+backend_public_uri: "http://{{ ansible_host }}"

@@ -5,3 +5,9 @@ docs/operations/mikrus-server.md
 tools/
 /.playwright-mcp/
 /.maister
+
+# Terraform (secondary EC2 backend) — local state, never committed
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/terraform.tfvars

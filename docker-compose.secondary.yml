@@ -1,26 +1,4 @@
 services:
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    mem_limit: 256m
-    ports:
-      # Bound to the primary's own Tailscale IP only — this is what keeps
-      # Postgres off the public internet, not any UFW rule. Docker's DNAT
-      # for published ports bypasses UFW's chains entirely, so a bind to
-      # 0.0.0.0 here would be reachable from anywhere despite UFW. See
-      # docs/operations/infrastructure.md.
-      - "${DB_BIND_ADDR}:5432:5432"
-    environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
-      interval: 10s
-      retries: 5
-
   backend:
     image: ghcr.io/${GHCR_OWNER}/architecture-hub-backend:${IMAGE_TAG:?IMAGE_TAG must be set}
     restart: unless-stopped
@@ -29,6 +7,9 @@ services:
     environment:
       APP_ENV: prod
       APP_SECRET: ${APP_SECRET}
+      # ${DB_HOST} resolves to the primary's Tailscale IP here — there is no
+      # local `db` service on this host. See docs/operations/infrastructure.md
+      # ("EC2 secondary") and docs/operations/failover-runbook.md.
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_DATABASE}?serverVersion=16&charset=utf8
       DEFAULT_URI: ${DEFAULT_URI}
       LOCK_DSN: flock
@@ -45,10 +26,6 @@ services:
       retries: 3
     volumes:
       - uploads:/var/www/html/public/uploads
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
-  db_data:
   uploads:

@@ -82,8 +82,9 @@ Add these in **Settings → Secrets and variables → Actions**:
 
 | Secret | Used by | Description |
 |---|---|---|
-| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS |
-| `PRODUCTION_HOST` | `cd-backend` | VPS IP address or hostname |
+| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS and the EC2 secondary (same keypair) |
+| `PRODUCTION_HOST` | `cd-backend` | Mikrus VPS IP address or hostname (primary) |
+| `PRODUCTION_HOST_EC2` | `cd-backend` | EC2 secondary's Elastic IP (Terraform output — see [failover-runbook.md](failover-runbook.md)) |
 | `ANSIBLE_VAULT_PASSWORD` | `cd-backend` | Password for `ansible/group_vars/vault.yml` |
 | `VERCEL_TOKEN` | `cd-frontend` | Personal access token from Vercel Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `cd-frontend` | Find under Vercel team Settings → General |
