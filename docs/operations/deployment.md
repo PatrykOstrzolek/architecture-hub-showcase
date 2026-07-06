@@ -120,9 +120,9 @@ ansible-playbook playbooks/provision.yml -i inventory/production.ini \
 
 After provisioning, push to `main` to trigger the first automated deployment.
 
-## 7. First-Deploy Database Initialisation
+## 7. First-Deploy Database Initialisation (and content repair)
 
-The automated deploy pipeline does **not** initialise the database. Run these once after the first container is up:
+The automated deploy pipeline does **not** initialise the database. Run these once after the first container is up — schema via migrations (unchanged), content via the same Doctrine Fixtures used in local dev:
 
 ```bash
 # Set these to match your server — see docs/operations/mikrus-server.md (gitignored)
@@ -132,25 +132,81 @@ CONTAINER="architecture-hub-backend-1"
 # 1. Create the Sulu schema (all tables)
 $SERVER "docker exec $CONTAINER php bin/console doctrine:schema:create --no-interaction"
 
-# 2. Initialise the Doctrine Migrations tracking table
-$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:sync-metadata-storage --no-interaction"
+# 2. Security roles, the admin user, and one homepage per webspace — IN THIS
+#    ORDER, and BEFORE fixtures. ArticleFixture looks up the admin's own
+#    "Adam Ministrator" contact as the default author (created as a side
+#    effect of sulu:security:user:create) and several fixtures require the
+#    homepage to exist as their parent page — run fixtures first and
+#    everything that depends on either one silently no-ops instead of
+#    erroring, which is worse: it looks like success.
+$SERVER "docker exec $CONTAINER php bin/console sulu:security:init --no-interaction"
+$SERVER "docker exec $CONTAINER php bin/console sulu:security:role:create --no-interaction User Sulu"
+$SERVER "docker exec $CONTAINER php bin/console sulu:security:user:create --no-interaction admin Adam Ministrator admin@example.com en User admin"
+$SERVER "docker exec $CONTAINER php bin/console sulu:page:initialize --no-interaction"
 
-# 3. Mark Sulu's internal data-migration versions as done
-#    (they convert legacy tag-name data; irrelevant on a fresh install)
-$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
-  'Sulu\Article\Migrations\Version20260429120000' --add --no-interaction"
-$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
-  'Sulu\Page\Migrations\Version20260429120000' --add --no-interaction"
-$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version \
-  'Sulu\Snippet\Migrations\Version20260429120000' --add --no-interaction"
+# 3. Load all content — the SAME fixture classes as local dev
+#    (backend/src/DataFixtures/): tags, categories, contacts, articles,
+#    author pages, exercises/QuestionSets, learning paths. Every fixture is
+#    idempotent (upsert-by-slug/title), so this is also the correct way to
+#    *repair* prod content later — just re-run it, safely, any time,
+#    regardless of step 2 (that part only matters for a truly empty DB).
+$SERVER "docker exec $CONTAINER php bin/console doctrine:fixtures:load --no-interaction --append"
 
-# 4. Run the seed migration (loads demo content)
-$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:migrate --no-interaction"
+# 4. Clear the backend's own HTTP cache (FOSHttpCacheBundle). Without this,
+#    any URL that existed before this reinit (e.g. an exercise page at the
+#    same slug, now backed by a different page UUID) keeps serving its
+#    stale pre-reinit response indefinitely — the DB is correct, but the
+#    live site silently isn't. Confirmed by curling an exercise page right
+#    after fixtures loaded: it returned the *old* UUID until this ran.
+$SERVER "docker exec $CONTAINER php bin/console fos:httpcache:clear --no-interaction"
 ```
 
-### Why not `sulu:build prod`?
+Steps 2-3 are exactly what `sulu:build <env>`'s `user`/`security`/`homepage`/`fixtures`
+targets already do internally (see `Sulu\Bundle\CoreBundle\Build\FixturesBuilder` —
+it calls `doctrine:fixtures:load` with no `--group` filter, so it was never actually
+dev-only) — this section just runs them individually, in the corrected order, to
+keep schema management on migrations explicitly rather than also switching to
+`sulu:build`'s `doctrine:schema:update`. (Sulu's own internal build order runs
+fixtures *before* user/homepage and gets away with it only because local dev's
+docs already document — and require — a second `doctrine:fixtures:load --append`
+pass afterward; putting user/homepage first here avoids needing that second pass
+at all. Verified end-to-end locally, from a fully torn-down database, before
+running this against production.)
 
-`sulu:build prod` also runs `doctrine:fixtures:load`, which conflicts with the seed migration data. Use the manual sequence above instead.
+### Why this replaced the old seed-dump migration
+
+Content used to be seeded from a `seed.sql.gz` production dump
+(`Version20260629000000`) plus a hand-written data migration
+(`Version20260704090000`) for QuestionSets. Both files stay in
+`backend/migrations/` as historical, already-applied record — migrations are
+forward-only, never edit or delete one that's already run — but they're no
+longer the recommended path: the dump predates the exercise/quiz feature, so
+a from-scratch reinit using only migrations silently produced a site with
+**no exercise pages at all**, since page creation was never captured
+anywhere except manual admin authoring and the dev-only fixture. Fixtures
+are now the single place that content is defined for both dev and prod, so
+it can't drift between the two again.
+
+If doing a genuine ground-up reinit (fresh empty database), mark the
+already-applied migrations first so `doctrine:migrations:migrate` doesn't
+try to replay the old versions:
+
+```bash
+$SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:sync-metadata-storage --no-interaction"
+for v in 'Sulu\Article\Migrations\Version20260429120000' \
+         'Sulu\Page\Migrations\Version20260429120000' \
+         'Sulu\Snippet\Migrations\Version20260429120000' \
+         'DoctrineMigrations\Version20260629000000' \
+         'DoctrineMigrations\Version20260701184007' \
+         'DoctrineMigrations\Version20260702144733' \
+         'DoctrineMigrations\Version20260703000045' \
+         'DoctrineMigrations\Version20260704090000'; do
+  $SERVER "docker exec $CONTAINER php bin/console doctrine:migrations:version '$v' --add --no-interaction"
+done
+```
+
+Migrations remain the correct mechanism for *schema* changes going forward
+(new tables/columns) — this change only affects how *content* is seeded.
 
 ### Reset the admin password
 
