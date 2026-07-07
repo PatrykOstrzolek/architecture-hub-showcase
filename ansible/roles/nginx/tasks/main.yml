@@ -49,3 +49,11 @@
     name: nginx
     enabled: true
     state: started
+
+# Without this, the pending "Reload nginx" handler notified by the template
+# task above wouldn't fire until the play's natural end — too late for the
+# certbot role's ACME HTTP-01 challenge, which needs the just-templated
+# acme-challenge location actually live on the running nginx process, not
+# just written to disk.
+- name: Flush handlers so nginx serves the latest vhost before certbot runs
+  ansible.builtin.meta: flush_handlers
