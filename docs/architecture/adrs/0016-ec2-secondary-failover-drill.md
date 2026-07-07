@@ -23,6 +23,8 @@ Failover is a **manual drill**: since there's no owned DNS zone, the equivalent 
 
 Both instances deploy via the existing `cd-backend.yml` pipeline, sequentially (primary's migration must land before the secondary redeploys against the shared DB — enforced via Ansible's `is_primary` gate and GitHub Actions job dependencies).
 
+Two additional hardening measures came out of `ci-security.yml`'s Semgrep gate flagging real findings on the first PR push, not from upfront design: the EC2 instance enforces IMDSv2 (`metadata_options.http_tokens = "required"` in `terraform/main.tf`, blocking the SSRF-to-credential-theft path IMDSv1 allows), and the secondary's catch-all nginx vhost sets `proxy_set_header Host` to the known instance address rather than passing through the raw, attacker-controllable request Host header — there's no real `server_name` to validate against otherwise. `cd-backend.yml` also gained a Trivy scan of the *built* image itself, gating both deploy jobs; `ci-security.yml`'s existing Trivy step only ever scanned the source filesystem pre-build, which was a real pre-existing gap this work happened to surface.
+
 ## Alternatives Considered
 
 **Route53/Cloudflare DNS failover** — rejected: no owned domain to manage failover routing on.
@@ -42,6 +44,7 @@ Both instances deploy via the existing `cd-backend.yml` pipeline, sequentially (
 - Practices real, transferable DevOps skills: Terraform-provisioned cloud compute, private cross-cloud networking (Tailscale), Ansible multi-host inventory patterns, and a documented failover runbook.
 - The primary's behavior and existing single-instance deployment path are unchanged — the secondary is purely additive.
 - Elastic IP keeps the Ansible inventory target stable even if the instance is replaced by a future `terraform apply`.
+- Closes a repo-wide gap unrelated to this ADR's original scope: the backend image itself is now scanned in CI (`cd-backend.yml`), not just its source filesystem — this benefits every future deploy, primary or secondary.
 
 ### Negative
 

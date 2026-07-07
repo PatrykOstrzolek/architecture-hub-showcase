@@ -74,14 +74,15 @@ Docker images are built in CI and pushed to **GitHub Container Registry (GHCR)**
 
 ### EC2 secondary (manual failover drill)
 
-A second backend instance runs on AWS EC2 (provisioned via Terraform, `terraform/`), as a DevOps training exercise in active-passive failover — not real HA. See [failover-runbook.md](failover-runbook.md) for what it does and doesn't cover, and the "EC2 Secondary Backend" implementation plan for how it was built.
+A second backend instance runs on AWS EC2 (provisioned via Terraform, `terraform/`), as a DevOps training exercise in active-passive failover — not real HA. See [failover-runbook.md](failover-runbook.md) for what it does and doesn't cover, and [ADR-0016](../architecture/adrs/0016-ec2-secondary-failover-drill.md) for the full rationale and rejected alternatives.
 
 Key differences from the primary:
 
 - **No local Postgres.** The secondary's `backend` container connects to the *primary's* Postgres over a private **Tailscale** mesh (both hosts are tailnet members). The Postgres port is published only on the primary, bound to the primary's own Tailscale IP — never `0.0.0.0` — so it's unreachable from the public internet regardless of UFW (Docker's port publishing bypasses UFW's chains entirely; the bind address is the actual control).
-- **No owned domain.** There's nothing to attach a `server_name` or TLS cert to, so the secondary's nginx vhost (`app-secondary.conf.j2`) is a single catch-all `server_name _;` block over HTTP only.
+- **No owned domain.** There's nothing to attach a `server_name` or TLS cert to, so the secondary's nginx vhost (`app-secondary.conf.j2`) is a single catch-all `server_name _;` block over HTTP only. Since there's no domain to validate a `Host` header against either, it's fixed to the instance's own known address rather than passed through from the request — an unvalidated Host header forwarded to the backend is a real injection vector, not a hypothetical one (caught by `ci-security.yml`'s Semgrep gate).
 - **Migrations run on the primary only** (`is_primary` gate in the `app` Ansible role) — both hosts share one DB, so there's no need for both to race `doctrine:migrations:migrate`.
 - **Media uploads are not shared.** The secondary's `uploads` volume is local and empty — see the failover runbook's limitations section.
+- **IMDSv2 enforced.** `terraform/main.tf` sets `metadata_options.http_tokens = "required"`, blocking the older, SSRF-vulnerable IMDSv1 path to the instance metadata service.
 
 Deployed via the same `cd-backend.yml` pipeline, sequentially: `deploy-primary` then `deploy-secondary` (the secondary always waits for the primary's migration to land first). Infra provisioning (`cd-infra.yml`) takes a required `target: primary|secondary` input since it's a manual, deliberate trigger either way.
 

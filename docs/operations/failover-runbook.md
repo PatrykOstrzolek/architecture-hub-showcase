@@ -46,4 +46,4 @@ Mikrus's `tojest.dev` subdomains are Mikrus-managed DNS records — there's no o
 
 ## Bootstrap and provisioning
 
-See the "Branch & rollout" and "One-time manual bootstrap" sections of the implementation plan for how the secondary was stood up (Terraform, Tailscale, Ansible `--limit secondary`). If the EC2 instance is ever replaced (e.g. a future `terraform apply` picks up a newer AMI), the Elastic IP re-associates automatically but Tailscale needs to rejoin — re-run `ansible-playbook playbooks/provision.yml --limit secondary` before expecting the secondary to work again.
+See [ADR-0016](../architecture/adrs/0016-ec2-secondary-failover-drill.md) for how the secondary was stood up (Terraform, Tailscale, Ansible `--limit secondary`) and why. If the EC2 instance is ever replaced (e.g. a future `terraform apply` picks up a newer AMI), the Elastic IP re-associates automatically but Tailscale needs to rejoin — re-run `ansible-playbook playbooks/provision.yml --limit secondary` (or trigger `cd-infra.yml` with `target: secondary`) before expecting the secondary to work again.
