@@ -12,6 +12,6 @@ output "public_ip" {
 # "compute-1.amazonaws.com" suffix instead — fine for this project's fixed
 # eu-central-1 default, not worth a conditional for a single-region setup.
 output "public_dns" {
-  description = "AWS-assigned public hostname for the Elastic IP — free, stable as long as the EIP is retained, and used as the TLS cert's subject (see ansible/group_vars/secondary/main.yml: ec2_public_hostname). Computed rather than read from aws_instance.secondary.public_dns, which can still reflect the instance's original auto-assigned IP immediately after EIP association within the same apply."
+  description = "AWS-assigned public hostname for the Elastic IP — free and stable as long as the EIP is retained, but NOT usable as a Let's Encrypt cert subject: Let's Encrypt's CA policy refuses to issue for *.amazonaws.com hostnames outright (\"forbidden by policy\", confirmed against the live ACME server). The actual TLS cert subject is a sslip.io hostname instead (see ansible/group_vars/secondary/main.yml: ec2_public_hostname). Computed rather than read from aws_instance.secondary.public_dns, which can still reflect the instance's original auto-assigned IP immediately after EIP association within the same apply."
   value       = "ec2-${replace(aws_eip.secondary.public_ip, ".", "-")}.${var.region}.compute.amazonaws.com"
 }

@@ -1,9 +1,13 @@
 is_primary: false
 app_user: ubuntu
 
-# AWS's own free public DNS hostname for the Elastic IP (see terraform/outputs.tf:
-# public_dns) — used as the Let's Encrypt cert subject and Host header, since a
-# bare IP can't hold a TLS cert. Stable as long as the EIP is retained; update
-# this if the EIP is ever released and re-allocated.
-ec2_public_hostname: "ec2-52-57-29-121.eu-central-1.compute.amazonaws.com"
+# Free wildcard-DNS hostname (sslip.io) resolving to the Elastic IP — used as
+# the Let's Encrypt cert subject and Host header, since a bare IP can't hold a
+# TLS cert. NOT AWS's own auto-generated public DNS name (terraform/outputs.tf:
+# public_dns): Let's Encrypt's CA policy refuses to issue for *.amazonaws.com
+# hostnames outright ("forbidden by policy", confirmed against the live ACME
+# server, not a config issue) — sslip.io isn't on that blocklist. Stable as
+# long as the EIP is retained; update this (and re-issue the cert) if the EIP
+# is ever released and re-allocated.
+ec2_public_hostname: "52-57-29-121.sslip.io"
 backend_public_uri: "https://{{ ec2_public_hostname }}"
