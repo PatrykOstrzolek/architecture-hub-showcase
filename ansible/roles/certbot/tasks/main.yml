@@ -1,0 +1,48 @@
+---
+# Only run for the EC2 secondary (see provision.yml's `when: not is_primary`
+# on this role) — the primary's TLS is terminated by Mikrus's own platform
+# proxy in front of nginx, not managed by this repo at all.
+#
+# Uses the webroot HTTP-01 method rather than the nginx plugin or standalone
+# mode: nginx stays running the whole time (no port-80 conflict, no downtime
+# on a host that may already be serving live failover-drill traffic), and
+# the plugin never touches the Ansible-managed vhost file directly.
+
+- name: Install certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: Obtain Let's Encrypt certificate via webroot
+  ansible.builtin.command:
+    cmd: >
+      certbot certonly --webroot -w {{ certbot_webroot }}
+      -d {{ ec2_public_hostname }}
+      -n --agree-tos --register-unsafely-without-email
+      --deploy-hook "systemctl reload nginx"
+    creates: "/etc/letsencrypt/live/{{ ec2_public_hostname }}/fullchain.pem"
+
+- name: Check certificate presence after issuance
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ ec2_public_hostname }}/fullchain.pem"
+  register: certbot_le_cert_after
+
+# The nginx role's own render (earlier in the play) used whatever cert state
+# existed at that point — on first bootstrap that's "no cert yet", so it
+# rendered HTTP-only. Now that certbot has issued one, re-render so the 443
+# block appears without needing a second playbook run.
+- name: Re-deploy virtual host now that a certificate exists
+  ansible.builtin.template:
+    src: app-secondary.conf.j2
+    dest: /etc/nginx/sites-available/architecture-hub
+    mode: "0644"
+  vars:
+    tls_cert_exists: "{{ certbot_le_cert_after.stat.exists }}"
+  notify: Reload nginx
+  when: certbot_le_cert_after.stat.exists
+
+- name: Ensure certbot renewal timer is enabled
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: true
+    state: started
