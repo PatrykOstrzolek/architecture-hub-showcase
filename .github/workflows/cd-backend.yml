@@ -55,6 +55,19 @@ jobs:
             ${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ env.BACKEND_IMAGE }}:latest
 
+      # ci-security.yml's Trivy step only scans the source filesystem, never
+      # the built image (base OS packages, PHP extensions) — this is the gate
+      # that actually covers what ships. Blocks deploy-primary/deploy-secondary
+      # (both `needs: build-and-push`) if it fails.
+      - name: Trivy — scan built image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.version }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
   deploy-primary:
     name: Deploy backend to primary (Mikrus) via Ansible
     needs: build-and-push

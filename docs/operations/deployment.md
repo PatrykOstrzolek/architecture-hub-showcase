@@ -61,7 +61,8 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
 ### Backend (`cd-backend.yml`)
 
 1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA (priority 700) + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
-2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory:
+2. **Trivy — scan built image** — scans the just-pushed image itself (HIGH/CRITICAL, unfixed only); blocks both deploy jobs below if it fails. Distinct from `ci-security.yml`'s Trivy step, which only scans the source filesystem, never the built image.
+3. **Deploy primary** — runs `ansible/playbooks/deploy.yml --limit primary` against the Mikrus VPS:
    - Prunes unused Docker images (frees disk before pulling)
    - Templates `.env`, pulls the new backend image
    - Runs pending `doctrine:migrations:migrate` against the new image in a
@@ -70,6 +71,8 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
    - Recreates containers with the new image
    - Health-checks `http://127.0.0.1:8000/admin/` (12 retries × 5 s)
    - Warms the Symfony cache inside the running container
+   - Revalidates the Next.js cache
+4. **Deploy secondary** — runs the same playbook `--limit secondary` against the EC2 failover instance, only after the primary succeeds (shared DB — the primary's migration must land first). No migration step here (gated to primary only) and no local Postgres. See [infrastructure.md](infrastructure.md) and [failover-runbook.md](failover-runbook.md).
 
 ### Frontend (`cd-frontend.yml`)
 
