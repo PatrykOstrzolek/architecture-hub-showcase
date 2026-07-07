@@ -1,13 +1,36 @@
-# EC2 secondary — training/failover-drill instance, no owned domain to match
-# a server_name against, so this is a single catch-all vhost merging both of
-# the primary's location allowlists (admin + api/json/media). HTTP only —
-# there's no ownable name to issue a TLS cert for, and this box is
-# operator-driven during a manual drill, not sustained public traffic. See
-# docs/operations/failover-runbook.md.
+# EC2 secondary — training/failover-drill instance, no owned domain, so this
+# is a single catch-all vhost merging both of the primary's location
+# allowlists (admin + api/json/media). TLS uses AWS's own free public DNS
+# hostname for the Elastic IP ({{ ec2_public_hostname }}) via Let's Encrypt —
+# see the certbot role and docs/operations/failover-runbook.md.
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
+
+    client_max_body_size 64M;
+    merge_slashes off;
+
+    # Let's Encrypt HTTP-01 challenge — must stay reachable over plain HTTP
+    # even after TLS is enabled below, since certbot's renewal timer reuses it.
+    location /.well-known/acme-challenge/ {
+        root {{ certbot_webroot }};
+    }
+
+{% if tls_cert_exists %}
+    location / {
+        return 301 https://{{ ec2_public_hostname }}$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/letsencrypt/live/{{ ec2_public_hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ ec2_public_hostname }}/privkey.pem;
 
     client_max_body_size 64M;
     merge_slashes off;
@@ -24,14 +47,18 @@ server {
     location ~ (\.json$|^/(api|media)|^/admin/api/preview/) {
         proxy_pass         http://127.0.0.1:8000;
         proxy_http_version 1.1;
-        # Fixed to the known instance address rather than passing through the
-        # raw request Host header (an attacker-controllable value) — this vhost
-        # has no real domain to validate against, so this is the allowlist.
-        proxy_set_header   Host {{ ansible_host }};
+        # Fixed to the known instance hostname rather than passing through
+        # the raw request Host header (an attacker-controllable value) —
+        # this vhost has no real domain to validate against, so this is the
+        # allowlist.
+        proxy_set_header   Host {{ ec2_public_hostname }};
         proxy_set_header   X-Real-IP $remote_addr;
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Proto $scheme;
 
+        # Only set in this TLS server block, not the plain-HTTP branch below —
+        # HSTS only makes sense once a response actually came back over TLS.
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
         add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
@@ -43,10 +70,43 @@ server {
     location ~ ^/(admin|build|bundles|token|favicon\.ico$) {
         proxy_pass         http://127.0.0.1:8000;
         proxy_http_version 1.1;
-        # Fixed to the known instance address rather than passing through the
-        # raw request Host header (an attacker-controllable value) — this vhost
-        # has no real domain to validate against, so this is the allowlist.
-        proxy_set_header   Host {{ ansible_host }};
+        proxy_set_header   Host {{ ec2_public_hostname }};
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Cross-Origin-Resource-Policy "same-origin" always;
+    }
+}
+{% else %}
+    location / {
+        return 404;
+    }
+
+    location ~ (\.json$|^/(api|media)|^/admin/api/preview/) {
+        proxy_pass         http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host {{ ec2_public_hostname }};
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Cross-Origin-Resource-Policy "same-origin" always;
+        add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'" always;
+    }
+
+    location ~ ^/(admin|build|bundles|token|favicon\.ico$) {
+        proxy_pass         http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host {{ ec2_public_hostname }};
         proxy_set_header   X-Real-IP $remote_addr;
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Proto $scheme;
@@ -58,3 +118,4 @@ server {
         add_header Cross-Origin-Resource-Policy "same-origin" always;
     }
 }
+{% endif %}

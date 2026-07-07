@@ -13,3 +13,4 @@
     - docker
     - tailscale
     - nginx
+    - { role: certbot, when: not is_primary }

@@ -1,3 +1,9 @@
 is_primary: false
 app_user: ubuntu
-backend_public_uri: "http://{{ ansible_host }}"
+
+# AWS's own free public DNS hostname for the Elastic IP (see terraform/outputs.tf:
+# public_dns) — used as the Let's Encrypt cert subject and Host header, since a
+# bare IP can't hold a TLS cert. Stable as long as the EIP is retained; update
+# this if the EIP is ever released and re-allocated.
+ec2_public_hostname: "ec2-52-57-29-121.eu-central-1.compute.amazonaws.com"
+backend_public_uri: "https://{{ ec2_public_hostname }}"

@@ -60,6 +60,14 @@ resource "aws_security_group" "secondary" {
     cidr_blocks = [var.allowed_cidr]
   }
 
+  ingress {
+    description = "HTTPS (nginx, TLS via Lets Encrypt on the AWS-assigned public hostname)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_cidr]
+  }
+
   egress {
     description = "All outbound (GHCR pulls, apt, Tailscale DERP relay, etc.)"
     from_port   = 0

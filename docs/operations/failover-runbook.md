@@ -13,15 +13,15 @@ The secondary (AWS EC2) runs its own `backend` container but shares the **same P
 
 1. **Verify the secondary is actually healthy** before sending traffic to it:
    ```bash
-   curl -f http://<EC2 Elastic IP>/admin/
-   curl -f http://<EC2 Elastic IP>/<some-known-page>.json
+   curl -f https://ec2-<ip-with-dashes>.eu-central-1.compute.amazonaws.com/admin/
+   curl -f https://ec2-<ip-with-dashes>.eu-central-1.compute.amazonaws.com/<some-known-page>.json
    ```
-   Both should return real content, not a timeout or 404.
+   Both should return real content, not a timeout or 404. Use the hostname, not the raw IP — that's the TLS cert's subject (see [infrastructure.md](infrastructure.md#ec2-secondary-manual-failover-drill)); hitting the bare IP over HTTPS fails certificate validation.
 2. **Point the frontend at it** — Vercel's `SULU_BASE_URL` is the single place that decides which backend the whole system talks to:
    ```bash
    vercel env rm SULU_BASE_URL production
    vercel env add SULU_BASE_URL production
-   # value: http://<EC2 Elastic IP>
+   # value: https://ec2-<ip-with-dashes>.eu-central-1.compute.amazonaws.com
    ```
    (Or via the Vercel dashboard: Project → Settings → Environment Variables.)
 3. **Redeploy** so the new env var actually takes effect:
