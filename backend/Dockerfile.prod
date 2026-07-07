@@ -1,5 +1,14 @@
 FROM serversideup/php:8.5-fpm-nginx AS builder
 USER root
+
+# The base image tag is floating — it doesn't guarantee the latest patched
+# OS packages at pull time. Caught by cd-backend.yml's Trivy image scan
+# flagging known-fixed HIGH CVEs in libssh2/linux-libc-dev that predate
+# this Dockerfile entirely; explicit upgrade closes that drift.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN install-php-extensions intl gd apcu opcache
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
