@@ -7,8 +7,15 @@ name: CD — Infra
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: "Which host to provision"
+        required: true
+        type: choice
+        options:
+          - primary
+          - secondary
       tags:
-        description: 'Ansible tags to limit the run to (e.g. "nginx"). Leave empty to run common+docker+nginx.'
+        description: 'Ansible tags to limit the run to (e.g. "nginx"). Leave empty to run common+docker+tailscale+nginx.'
         required: false
         default: ""
 
@@ -27,11 +34,19 @@ jobs:
         run: ansible-galaxy collection install -r ansible/requirements.yml
 
       - name: Configure SSH
+        env:
+          TARGET: ${{ github.event.inputs.target }}
+          PRIMARY_HOST: ${{ secrets.PRODUCTION_HOST }}
+          SECONDARY_HOST: ${{ secrets.PRODUCTION_HOST_EC2 }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H -p 10130 "${{ secrets.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+          if [ "$TARGET" = "primary" ]; then
+            ssh-keyscan -H -p 10130 "$PRIMARY_HOST" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H -p 22 "$SECONDARY_HOST" >> ~/.ssh/known_hosts
+          fi
 
       - name: Write Ansible vault password
         env:
@@ -45,15 +60,23 @@ jobs:
 
       - name: Run provision playbook
         env:
-          ANSIBLE_HOST: ${{ secrets.PRODUCTION_HOST }}
+          TARGET: ${{ github.event.inputs.target }}
+          PRIMARY_HOST: ${{ secrets.PRODUCTION_HOST }}
+          SECONDARY_HOST: ${{ secrets.PRODUCTION_HOST_EC2 }}
           ANSIBLE_TAGS: ${{ github.event.inputs.tags }}
         run: |
+          if [ "$TARGET" = "primary" ]; then
+            ANSIBLE_HOST="$PRIMARY_HOST"
+          else
+            ANSIBLE_HOST="$SECONDARY_HOST"
+          fi
           tags_args=()
           if [ -n "$ANSIBLE_TAGS" ]; then
             tags_args=(--tags "$ANSIBLE_TAGS")
           fi
           ansible-playbook playbooks/provision.yml \
             --inventory inventory/production.ini \
+            --limit "$TARGET" \
             --vault-password-file ~/.vault_pass \
             --extra-vars "ansible_host=$ANSIBLE_HOST" \
             "${tags_args[@]}"

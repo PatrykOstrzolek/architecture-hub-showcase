@@ -61,7 +61,8 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
 ### Backend (`cd-backend.yml`)
 
 1. **Build & push** — builds `backend/Dockerfile.prod`, tags with git SHA (priority 700) + `latest`, pushes to GHCR (`ghcr.io/<owner>/architecture-hub-backend`)
-2. **Deploy** — runs `ansible/playbooks/deploy.yml` against the production inventory:
+2. **Trivy — scan built image** — scans the just-pushed image itself (HIGH/CRITICAL, unfixed only); blocks both deploy jobs below if it fails. Distinct from `ci-security.yml`'s Trivy step, which only scans the source filesystem, never the built image.
+3. **Deploy primary** — runs `ansible/playbooks/deploy.yml --limit primary` against the Mikrus VPS:
    - Prunes unused Docker images (frees disk before pulling)
    - Templates `.env`, pulls the new backend image
    - Runs pending `doctrine:migrations:migrate` against the new image in a
@@ -70,6 +71,8 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
    - Recreates containers with the new image
    - Health-checks `http://127.0.0.1:8000/admin/` (12 retries × 5 s)
    - Warms the Symfony cache inside the running container
+   - Revalidates the Next.js cache
+4. **Deploy secondary** — runs the same playbook `--limit secondary` against the EC2 failover instance, only after the primary succeeds (shared DB — the primary's migration must land first). No migration step here (gated to primary only) and no local Postgres. See [infrastructure.md](infrastructure.md) and [failover-runbook.md](failover-runbook.md).
 
 ### Frontend (`cd-frontend.yml`)
 
@@ -82,8 +85,9 @@ Add these in **Settings → Secrets and variables → Actions**:
 
 | Secret | Used by | Description |
 |---|---|---|
-| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS |
-| `PRODUCTION_HOST` | `cd-backend` | VPS IP address or hostname |
+| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS and the EC2 secondary (same keypair) |
+| `PRODUCTION_HOST` | `cd-backend` | Mikrus VPS IP address or hostname (primary) |
+| `PRODUCTION_HOST_EC2` | `cd-backend` | EC2 secondary's Elastic IP (Terraform output — see [failover-runbook.md](failover-runbook.md)) |
 | `ANSIBLE_VAULT_PASSWORD` | `cd-backend` | Password for `ansible/group_vars/vault.yml` |
 | `VERCEL_TOKEN` | `cd-frontend` | Personal access token from Vercel Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `cd-frontend` | Find under Vercel team Settings → General |

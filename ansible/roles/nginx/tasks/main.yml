@@ -12,7 +12,7 @@
 
 - name: Deploy virtual host config
   ansible.builtin.template:
-    src: app.conf.j2
+    src: "{{ 'app.conf.j2' if is_primary else 'app-secondary.conf.j2' }}"
     dest: /etc/nginx/sites-available/architecture-hub
     mode: "0644"
   notify: Reload nginx
