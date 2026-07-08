@@ -13,6 +13,17 @@
     name: certbot
     state: present
 
+# Unconditional, not notify-driven: a prior run can leave nginx serving a
+# stale in-memory config even after the vhost file on disk is already
+# correct (Ansible's own change-detection sees no further diff and never
+# re-notifies the reload handler). The ACME HTTP-01 challenge below needs
+# nginx to actually be serving the current acme-challenge location, not
+# just have the right file on disk.
+- name: Ensure nginx is serving the current vhost config
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+
 - name: Obtain Let's Encrypt certificate via webroot
   ansible.builtin.command:
     cmd: >
