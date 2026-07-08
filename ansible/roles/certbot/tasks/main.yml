@@ -44,13 +44,19 @@
 # block appears without needing a second playbook run.
 - name: Re-deploy virtual host now that a certificate exists
   ansible.builtin.template:
-    src: app-secondary.conf.j2
+    # template's src: lookup is relative to *this* role's own templates/ dir
+    # by default — app-secondary.conf.j2 lives in the nginx role, so the path
+    # has to be spelled out explicitly via role_path.
+    src: "{{ role_path }}/../nginx/templates/app-secondary.conf.j2"
     dest: /etc/nginx/sites-available/architecture-hub
     mode: "0644"
   vars:
     tls_cert_exists: "{{ certbot_le_cert_after.stat.exists }}"
   notify: Reload nginx
   when: certbot_le_cert_after.stat.exists
+
+- name: Flush handlers so nginx serves the TLS-enabled vhost immediately
+  ansible.builtin.meta: flush_handlers
 
 - name: Ensure certbot renewal timer is enabled
   ansible.builtin.systemd:
