@@ -60,6 +60,13 @@ server {
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Proto $scheme;
 
+        # Sulu/Symfony itself also emits an HSTS header (max-age=31536000) once
+        # it sees X-Forwarded-Proto: https — left in place, this stacks with
+        # ours into two Strict-Transport-Security headers on one response,
+        # which RFC 6797 §8.1 requires clients to treat as if HSTS were absent
+        # entirely (confirmed live: `curl -D -` showed both). Hide the
+        # upstream one so only this vhost's stricter value survives.
+        proxy_hide_header  Strict-Transport-Security;
         # Only set in this TLS server block, not the plain-HTTP branch below —
         # HSTS only makes sense once a response actually came back over TLS.
         add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
@@ -79,6 +86,7 @@ server {
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Proto $scheme;
 
+        proxy_hide_header  Strict-Transport-Security;
         add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header X-Content-Type-Options "nosniff" always;
