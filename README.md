@@ -57,21 +57,22 @@ All architectural decisions are in [`docs/architecture/adrs/`](docs/architecture
 ### Prerequisites
 
 ```bash
-which docker npm
+which docker npm mise symfony
 ```
 
-Docker just needs to be running — any local Docker runtime works. PHP and Composer are not required on the host; they run inside the `php` container.
+Docker just needs to be running (any local Docker runtime works) — it's only used for Postgres and Mailpit. PHP itself runs on the host via [mise](https://mise.jdx.dev) (version pinned in the repo's `mise.toml`), and the dev server runs via [Symfony CLI](https://symfony.com/download) (`brew install symfony-cli/tap/symfony-cli`, not mise-managed). See [ADR-0017](docs/architecture/adrs/0017-mise-managed-host-php-for-local-dev.md).
 
 ### Backend
 
-PHP's memory limit is set to 1G via the `PHP_MEMORY_LIMIT` container env var (`backend/compose.override.yaml`) — no inline `-d memory_limit` flags needed.
+PHP's memory limit is set to 1G via `backend/php-conf.d/local.ini`, loaded automatically through `mise.toml`'s `PHP_INI_SCAN_DIR` — no inline `-d memory_limit` flags needed.
 
 ```bash
 cd backend
 cp .env.example .env          # fill in DB credentials
-docker compose up -d          # starts PHP, PostgreSQL, and Mailpit
-docker compose exec php composer install
-docker compose exec php bin/console sulu:build dev --destroy   # drops, recreates, and builds the schema from scratch — no migrate step needed
+docker compose up -d          # starts PostgreSQL and Mailpit
+composer install
+bin/console sulu:build dev --destroy   # drops, recreates, and builds the schema from scratch — no migrate step needed
+symfony serve                 # dev server
 ```
 
 ### Frontend

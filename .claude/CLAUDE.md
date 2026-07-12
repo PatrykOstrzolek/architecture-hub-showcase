@@ -25,30 +25,33 @@ always ask for confirmation. Never delete project files after a failed install �
 Verify tool availability before starting:
 
 ```bash
-which docker && which colima && which npx && which npm
+which mise && which symfony && which docker && which colima && which npx && which npm
 ```
 
 If a tool is missing, ask the user — do not guess paths or install automatically.
 
-### Backend commands run inside Docker, not on the host
+### Backend: PHP runs on the host via mise, Docker is only for Postgres + Mailpit
 
-There is no host PHP or Composer install for this project. Every `php`/`composer`/`bin/console` invocation must go through the running `php` container:
+PHP is managed by `mise` (version pinned in `mise.toml` at the repo root). `php`, `composer`, and `bin/console` all run directly on the host — no container involved:
 
 ```bash
 cd backend
-docker compose exec php composer install
-docker compose exec php bin/console cache:clear
+composer install
+php bin/console cache:clear
+symfony serve   # dev server, from backend/
 ```
 
-Bare `php ...`/`composer ...` on the host will fail (`command not found`) — do not attempt them.
+Docker (`docker compose up -d` from `backend/`) only starts `database` (Postgres) and `mailer` (Mailpit) — there is no `php` service anymore. See `docs/architecture/adrs/0017-mise-managed-host-php-for-local-dev.md`.
+
+`symfony` (Symfony CLI) is a separate host prerequisite, not mise-managed (mise's registry has no `symfony-cli` entry) — install via `brew install symfony-cli/tap/symfony-cli`.
 
 ### PHP Memory Limit
 
-Set via `PHP_MEMORY_LIMIT=1G` container env var (`backend/compose.override.yaml` for dev, `docker-compose.prod.yml` for prod) — applies to every `php`/`composer` invocation inside the container automatically. Do not reintroduce inline `-d memory_limit=1G` flags on individual commands.
+Set via `backend/php-conf.d/local.ini` (`memory_limit = 1G`, opcache enabled), loaded through `PHP_INI_SCAN_DIR` in `mise.toml`'s `[env]` table — applies to every `php`/`composer` invocation on the host automatically. Do not reintroduce inline `-d memory_limit=1G` flags on individual commands. (Prod's `docker-compose.prod.yml` still sets `PHP_MEMORY_LIMIT` as a container env var — that path is unaffected by this.)
 
 ### Docker
 
-May be configured through Colima. Check context before use:
+Only needed for Postgres + Mailpit in dev now. May be configured through Colima. Check context before use:
 
 ```bash
 which docker && which colima && docker context ls

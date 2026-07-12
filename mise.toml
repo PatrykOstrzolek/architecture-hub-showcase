@@ -1,0 +1,7 @@
+[tools]
+php = "8.5.7"
+
+[env]
+# Leading ":" appends this dir after PHP's default conf.d scan dirs, so these
+# override mise-php's own conf.d/php.ini (which sets memory_limit = 512M).
+PHP_INI_SCAN_DIR = ":{{config_root}}/backend/php-conf.d"

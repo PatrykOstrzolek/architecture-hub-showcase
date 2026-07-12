@@ -4,21 +4,23 @@
 
 | Environment | Purpose | Runtime |
 |---|---|---|
-| **Development** | Local development | Docker (any runtime) |
+| **Development** | Local development | Host PHP (mise) + Docker for Postgres/Mailpit |
 | **Production** | Live application | VPS (Ubuntu) + Docker CE for backend; Vercel for frontend |
 
 ## 2. Local Development Stack
 
-- **Container runtime**: any local Docker (Docker Desktop, Docker Engine, etc.)
-- **Backend image**: `serversideup/php:8.5-fpm-nginx` with `intl`, `gd`, `apcu` extensions
-- **PHP version**: 8.5 (pinned in `backend/docker/Dockerfile`)
+- **Container runtime**: any local Docker (Docker Desktop, Docker Engine, etc.) — used only for Postgres and Mailpit
+- **PHP**: runs on the host, version-managed by [mise](https://mise.jdx.dev) (pinned in the repo's `mise.toml`)
+- **Dev server**: [Symfony CLI](https://symfony.com/download) (`symfony serve`), installed separately via `brew install symfony-cli/tap/symfony-cli` — not mise-managed
 - **Node version**: 24
 
-PHP and Composer are not installed on the host — every `php`/`composer` invocation runs inside the `php` container via `docker compose exec php ...`. Its memory limit is set via the `PHP_MEMORY_LIMIT: 1G` container env var in `backend/compose.override.yaml`, so it applies automatically — no inline `-d` flag needed:
+See [ADR-0017](../architecture/adrs/0017-mise-managed-host-php-for-local-dev.md) for why local dev moved off the `serversideup/php:8.5-fpm-nginx` container (removed; prod builds from a separate `backend/Dockerfile.prod` and is unaffected).
+
+PHP's memory limit and opcache are set via `backend/php-conf.d/local.ini`, loaded through the `PHP_INI_SCAN_DIR` env var declared in `mise.toml`'s `[env]` table — no inline `-d` flag needed:
 
 ```bash
-docker compose exec php bin/console cache:clear
-docker compose exec php composer install
+bin/console cache:clear
+composer install
 ```
 
 ## 3. Production Stack

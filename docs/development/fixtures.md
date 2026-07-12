@@ -8,10 +8,10 @@ How to create Doctrine fixtures that publish content through the Sulu 3.x conten
 
 ```bash
 # Step 1 — full Sulu initialisation (tags/categories/contacts seeded; articles skip — homepage not yet created)
-docker compose exec php bin/console sulu:build dev
+bin/console sulu:build dev
 
 # Step 2 — load articles (homepage now exists, all references resolve)
-docker compose exec php bin/console doctrine:fixtures:load --append --group=dev
+bin/console doctrine:fixtures:load --append --group=dev
 ```
 
 `sulu:build dev` runs its internal `fixtures` step before the `homepage` step, so `ArticleFixture` detects the missing homepage and returns early. Step 2 re-runs all dev fixtures; the tag/category/contact fixtures are idempotent, and the article fixture now succeeds.
@@ -19,7 +19,7 @@ docker compose exec php bin/console doctrine:fixtures:load --append --group=dev
 After loading, re-index SEAL so articles appear in search:
 
 ```bash
-docker compose exec php bin/console cmsig:seal:reindex --drop
+bin/console cmsig:seal:reindex --drop
 ```
 
 ---
@@ -199,20 +199,20 @@ class MyArticleFixture extends Fixture implements FixtureGroupInterface
 
 ```bash
 # contacts (authors)
-docker compose exec php bin/console doctrine:query:sql "SELECT id, firstname, lastname FROM co_contacts"
+bin/console doctrine:query:sql "SELECT id, firstname, lastname FROM co_contacts"
 
 # tags
-docker compose exec php bin/console doctrine:query:sql "SELECT id, name FROM ta_tags"
+bin/console doctrine:query:sql "SELECT id, name FROM ta_tags"
 
 # categories
-docker compose exec php bin/console doctrine:query:sql \
+bin/console doctrine:query:sql \
   "SELECT c.id, ct.translation FROM ca_categories c \
    JOIN ca_category_translations ct ON ct.idcategories = c.id \
    WHERE ct.locale = 'en'"
 
 # parent page UUID for articles at root level
-docker compose exec php bin/console doctrine:query:sql "SELECT resource_id FROM ro_routes WHERE slug = '/'"
+bin/console doctrine:query:sql "SELECT resource_id FROM ro_routes WHERE slug = '/'"
 
 # existing article routes (to avoid slug collisions)
-docker compose exec php bin/console doctrine:query:sql "SELECT slug FROM ro_routes WHERE resource_key = 'articles'"
+bin/console doctrine:query:sql "SELECT slug FROM ro_routes WHERE resource_key = 'articles'"
 ```

@@ -30,14 +30,14 @@ Scope:
 
 Run:
 ```bash
-docker compose exec php vendor/bin/phpunit tests/Unit
+vendor/bin/phpunit tests/Unit
 ```
 
 Static analysis and formatting checks are also part of the quality gate:
 
 ```bash
-docker compose exec php vendor/bin/phpstan analyse
-docker compose exec php vendor/bin/php-cs-fixer fix --dry-run --diff
+vendor/bin/phpstan analyse
+vendor/bin/php-cs-fixer fix --dry-run --diff
 ```
 
 ### Frontend
