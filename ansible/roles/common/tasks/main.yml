@@ -28,6 +28,16 @@
     dest: "/etc/sudoers.d/{{ app_user }}"
     mode: "0440"
 
+# Only runs when the key is actually supplied (see cd-infra.yml, which derives
+# it from the same private key already on the runner) so manual/local runs
+# that don't pass it still work — trusting the key is otherwise a manual
+# one-time step after the first root-run.
+- name: Trust deploy user's SSH public key
+  ansible.posix.authorized_key:
+    user: "{{ app_user }}"
+    key: "{{ deploy_ssh_public_key }}"
+  when: deploy_ssh_public_key is defined and deploy_ssh_public_key | length > 0
+
 - name: Configure UFW — allow SSH
   community.general.ufw:
     rule: allow
