@@ -74,12 +74,15 @@ jobs:
           if [ -n "$ANSIBLE_TAGS" ]; then
             tags_args=(--tags "$ANSIBLE_TAGS")
           fi
-          DEPLOY_SSH_PUBLIC_KEY="$(ssh-keygen -y -f ~/.ssh/id_rsa)"
+          # JSON, not k=v — ansible's k=v extra-vars parser splits on
+          # whitespace, which mangles a public key (it contains spaces).
+          jq -n --arg key "$(ssh-keygen -y -f ~/.ssh/id_rsa)" \
+            '{deploy_ssh_public_key: $key}' > /tmp/deploy_key_vars.json
           ansible-playbook playbooks/provision.yml \
             --inventory inventory/production.ini \
             --limit "$TARGET" \
             --vault-password-file ~/.vault_pass \
             --extra-vars "ansible_host=$ANSIBLE_HOST" \
-            --extra-vars "deploy_ssh_public_key=$DEPLOY_SSH_PUBLIC_KEY" \
+            --extra-vars @/tmp/deploy_key_vars.json \
             "${tags_args[@]}"
         working-directory: ${{ github.workspace }}/ansible
