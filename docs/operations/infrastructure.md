@@ -74,20 +74,6 @@ Both point to the same backend process. Template: `ansible/roles/nginx/templates
 Docker images are built in CI and pushed to **GitHub Container Registry (GHCR)** under
 `ghcr.io/<owner>/architecture-hub-backend`. Each release is tagged with the git SHA and `latest`.
 
-### EC2 secondary (manual failover drill)
-
-A second backend instance runs on AWS EC2 (provisioned via Terraform, `terraform/`), as a DevOps training exercise in active-passive failover — not real HA. See [failover-runbook.md](failover-runbook.md) for what it does and doesn't cover, and [ADR-0016](../architecture/adrs/0016-ec2-secondary-failover-drill.md) for the full rationale and rejected alternatives.
-
-Key differences from the primary:
-
-- **No local Postgres.** The secondary's `backend` container connects to the *primary's* Postgres over a private **Tailscale** mesh (both hosts are tailnet members). The Postgres port is published only on the primary, bound to the primary's own Tailscale IP — never `0.0.0.0` — so it's unreachable from the public internet regardless of UFW (Docker's port publishing bypasses UFW's chains entirely; the bind address is the actual control).
-- **No owned domain, but real TLS.** There's no domain to attach a Sulu/Mikrus-style `server_name` to, so the secondary's nginx vhost (`app-secondary.conf.j2`) is a single catch-all `server_name _;` block — but it does terminate TLS, using a **sslip.io** wildcard-DNS hostname for the Elastic IP (`52-57-29-121.sslip.io`, see `ansible/group_vars/secondary/main.yml: ec2_public_hostname`) as the cert subject. AWS's own free public DNS hostname for the same IP (`terraform/outputs.tf: public_dns`) was tried first and rejected outright by Let's Encrypt — its CA policy refuses to issue for any `*.amazonaws.com` name, confirmed against the live ACME server, not a config issue — so sslip.io is used instead. A `certbot` Ansible role (`when: not is_primary`) obtains the cert via Let's Encrypt's HTTP-01 **webroot** challenge — nginx keeps running the whole time (no port-80 conflict, no downtime), and certbot's own `certbot.timer` handles renewal. Since there's still no domain to validate a `Host` header against, it's fixed to that known hostname rather than passed through from the request — an unvalidated Host header forwarded to the backend is a real injection vector, not a hypothetical one (caught by `ci-security.yml`'s Semgrep gate). The primary's TLS, by contrast, is terminated by Mikrus's own platform proxy in front of nginx — this repo has never had to manage a cert for it, and still doesn't.
-- **Migrations run on the primary only** (`is_primary` gate in the `app` Ansible role) — both hosts share one DB, so there's no need for both to race `doctrine:migrations:migrate`.
-- **Media uploads are not shared.** The secondary's `uploads` volume is local and empty — see the failover runbook's limitations section.
-- **IMDSv2 enforced.** `terraform/main.tf` sets `metadata_options.http_tokens = "required"`, blocking the older, SSRF-vulnerable IMDSv1 path to the instance metadata service.
-
-Currently stopped and out of the routine release path — `cd-backend.yml` only deploys to the primary. App code reaches the secondary only via a manual `ansible-playbook playbooks/deploy.yml --limit secondary` run (see [deployment.md §8](deployment.md#8-manual-deploy-emergency)), typically right before a failover drill. Infra provisioning (`cd-infra.yml`) takes a required `target: primary|secondary` input since it's a manual, deliberate trigger either way.
-
 ## 4. Infrastructure as Code
 
 All server configuration is in `ansible/`:
@@ -96,7 +82,7 @@ All server configuration is in `ansible/`:
 ansible/
   ansible.cfg               # default inventory, roles path
   inventory/
-    production.ini          # production host(s)
+    production.ini          # production host
     staging.ini             # staging host(s)
   group_vars/
     all.yml                 # non-secret variables (domain, api_domain, paths)

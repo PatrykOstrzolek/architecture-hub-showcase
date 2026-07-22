@@ -4,12 +4,11 @@ services:
     restart: unless-stopped
     mem_limit: 256m
     ports:
-      # Bound to the primary's own Tailscale IP only — this is what keeps
-      # Postgres off the public internet, not any UFW rule. Docker's DNAT
-      # for published ports bypasses UFW's chains entirely, so a bind to
-      # 0.0.0.0 here would be reachable from anywhere despite UFW. See
-      # docs/operations/infrastructure.md.
-      - "${DB_BIND_ADDR}:5432:5432"
+      # Bound to localhost only — this is what keeps Postgres off the public
+      # internet, not any UFW rule. Docker's DNAT for published ports bypasses
+      # UFW's chains entirely, so a bind to 0.0.0.0 here would be reachable
+      # from anywhere despite UFW. See docs/operations/infrastructure.md.
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USER}

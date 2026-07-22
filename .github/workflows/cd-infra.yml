@@ -7,15 +7,8 @@ name: CD — Infra
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: "Which host to provision"
-        required: true
-        type: choice
-        options:
-          - primary
-          - secondary
       tags:
-        description: 'Ansible tags to limit the run to (e.g. "nginx"). Leave empty to run common+docker+tailscale+nginx.'
+        description: 'Ansible tags to limit the run to (e.g. "nginx"). Leave empty to run common+docker+nginx.'
         required: false
         default: ""
 
@@ -35,18 +28,12 @@ jobs:
 
       - name: Configure SSH
         env:
-          TARGET: ${{ github.event.inputs.target }}
           PRIMARY_HOST: ${{ secrets.PRODUCTION_HOST }}
-          SECONDARY_HOST: ${{ secrets.PRODUCTION_HOST_EC2 }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          if [ "$TARGET" = "primary" ]; then
-            ssh-keyscan -H -p 10130 "$PRIMARY_HOST" >> ~/.ssh/known_hosts
-          else
-            ssh-keyscan -H -p 22 "$SECONDARY_HOST" >> ~/.ssh/known_hosts
-          fi
+          ssh-keyscan -H -p 10130 "$PRIMARY_HOST" >> ~/.ssh/known_hosts
 
       - name: Write Ansible vault password
         env:
@@ -60,16 +47,9 @@ jobs:
 
       - name: Run provision playbook
         env:
-          TARGET: ${{ github.event.inputs.target }}
           PRIMARY_HOST: ${{ secrets.PRODUCTION_HOST }}
-          SECONDARY_HOST: ${{ secrets.PRODUCTION_HOST_EC2 }}
           ANSIBLE_TAGS: ${{ github.event.inputs.tags }}
         run: |
-          if [ "$TARGET" = "primary" ]; then
-            ANSIBLE_HOST="$PRIMARY_HOST"
-          else
-            ANSIBLE_HOST="$SECONDARY_HOST"
-          fi
           tags_args=()
           if [ -n "$ANSIBLE_TAGS" ]; then
             tags_args=(--tags "$ANSIBLE_TAGS")
@@ -80,9 +60,8 @@ jobs:
             '{deploy_ssh_public_key: $key}' > /tmp/deploy_key_vars.json
           ansible-playbook playbooks/provision.yml \
             --inventory inventory/production.ini \
-            --limit "$TARGET" \
             --vault-password-file ~/.vault_pass \
-            --extra-vars "ansible_host=$ANSIBLE_HOST" \
+            --extra-vars "ansible_host=$PRIMARY_HOST" \
             --extra-vars @/tmp/deploy_key_vars.json \
             "${tags_args[@]}"
         working-directory: ${{ github.workspace }}/ansible

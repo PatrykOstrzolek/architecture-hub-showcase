@@ -11,7 +11,7 @@ Local backend development ran entirely inside a `serversideup/php:8.5-fpm-nginx`
 A repo-wide audit before this change surfaced two things that undercut the case for keeping that container:
 
 - **CI already runs on host PHP, not Docker.** `.github/workflows/ci-backend.yml` uses `shivammathur/setup-php@...` with `php-version: '8.5'` directly on the `ubuntu-latest` runner. The Docker-based local dev workflow was the odd one out, not CI.
-- **Production is fully decoupled from the dev container.** Prod builds from a separate `backend/Dockerfile.prod` and runs behind a host-level nginx + certbot on the Mikrus VPS (and the EC2 secondary, [ADR-0016](0016-ec2-secondary-failover-drill.md)). Nothing in the prod path references `backend/docker/` or `compose.override.yaml`.
+- **Production is fully decoupled from the dev container.** Prod builds from a separate `backend/Dockerfile.prod` and runs behind a host-level nginx on the Mikrus VPS. Nothing in the prod path references `backend/docker/` or `compose.override.yaml`.
 
 Separately, [mise](https://mise.jdx.dev) (a host tool version manager, already used for Node) gained a PHP plugin (`verzly/mise-php`) capable of managing a PHP install including FPM. A smoke test confirmed host PHP 8.5.7 via mise + `composer install` + a dev server served the app correctly against the same Postgres the Docker setup used (`/`, `/admin/`, and Sulu's `/.json` homepage-content route all returned 200, no errors) — with no nginx in the loop at all.
 

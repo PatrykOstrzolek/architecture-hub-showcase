@@ -72,7 +72,6 @@ Each CD workflow triggers via `workflow_run` after its corresponding CI workflow
    - Health-checks `http://127.0.0.1:8000/admin/` (12 retries × 5 s)
    - Warms the Symfony cache inside the running container
    - Revalidates the Next.js cache
-`cd-backend.yml` no longer deploys to the EC2 secondary automatically — it's stopped and out of the routine release path. It's still provisionable manually for the failover drill; see [infrastructure.md](infrastructure.md) and [failover-runbook.md](failover-runbook.md).
 
 ### Frontend (`cd-frontend.yml`)
 
@@ -85,9 +84,8 @@ Add these in **Settings → Secrets and variables → Actions**:
 
 | Secret | Used by | Description |
 |---|---|---|
-| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS and the EC2 secondary (same keypair) |
-| `PRODUCTION_HOST` | `cd-backend` | Mikrus VPS IP address or hostname (primary) |
-| `PRODUCTION_HOST_EC2` | `cd-infra` (manual) | EC2 secondary's Elastic IP (Terraform output — see [failover-runbook.md](failover-runbook.md)); no longer used by `cd-backend`, only by the manual `cd-infra` provisioning workflow |
+| `SSH_PRIVATE_KEY` | `cd-backend` | Private key authorized on the VPS |
+| `PRODUCTION_HOST` | `cd-backend` | Mikrus VPS IP address or hostname |
 | `ANSIBLE_VAULT_PASSWORD` | `cd-backend` | Password for `ansible/group_vars/vault.yml` |
 | `VERCEL_TOKEN` | `cd-frontend` | Personal access token from Vercel Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `cd-frontend` | Find under Vercel team Settings → General |

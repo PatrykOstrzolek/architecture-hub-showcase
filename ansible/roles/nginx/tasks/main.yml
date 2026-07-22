@@ -10,30 +10,11 @@
     path: /etc/nginx/sites-enabled/default
     state: absent
 
-- name: Ensure certbot webroot exists
-  ansible.builtin.file:
-    path: "{{ certbot_webroot }}"
-    state: directory
-    mode: "0755"
-  when: not is_primary
-
-# Runs before any cert exists too (first bootstrap) — the template below falls
-# back to plain HTTP in that case, so nginx never fails to start waiting on a
-# cert file that isn't there yet. The certbot role re-renders this same
-# template once it has actually obtained the certificate.
-- name: Check for an existing Let's Encrypt certificate
-  ansible.builtin.stat:
-    path: "/etc/letsencrypt/live/{{ ec2_public_hostname }}/fullchain.pem"
-  register: nginx_le_cert
-  when: not is_primary
-
 - name: Deploy virtual host config
   ansible.builtin.template:
-    src: "{{ 'app.conf.j2' if is_primary else 'app-secondary.conf.j2' }}"
+    src: app.conf.j2
     dest: /etc/nginx/sites-available/architecture-hub
     mode: "0644"
-  vars:
-    tls_cert_exists: "{{ (nginx_le_cert.stat.exists | default(false)) }}"
   notify: Reload nginx
 
 - name: Enable site
@@ -49,11 +30,3 @@
     name: nginx
     enabled: true
     state: started
-
-# Without this, the pending "Reload nginx" handler notified by the template
-# task above wouldn't fire until the play's natural end — too late for the
-# certbot role's ACME HTTP-01 challenge, which needs the just-templated
-# acme-challenge location actually live on the running nginx process, not
-# just written to disk.
-- name: Flush handlers so nginx serves the latest vhost before certbot runs
-  ansible.builtin.meta: flush_handlers
