@@ -4,6 +4,10 @@ A headless knowledge platform for software architecture and system design — bu
 
 > **Live demo**: [arch-hub-tawny.vercel.app](https://arch-hub-tawny.vercel.app)
 
+[![CI — Backend](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-backend.yml/badge.svg?branch=main)](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-backend.yml)
+[![CI — Frontend](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-frontend.yml/badge.svg?branch=main)](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-frontend.yml)
+[![CI — Security](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-security.yml/badge.svg?branch=main)](https://github.com/PatrykOstrzolek/architecture-hub-showcase/actions/workflows/ci-security.yml)
+
 <p align="center">
   <img src="home-light.png" width="49%" alt="Home — light mode" />
   <img src="home-dark.png" width="49%" alt="Home — dark mode" />
