@@ -102,11 +102,10 @@ jobs:
           VAULT_FILE: ${{ secrets.ANSIBLE_VAULT_FILE }}
         run: echo "$VAULT_FILE" > ansible/group_vars/all/vault.yml
 
-      - name: Run deploy playbook (primary)
+      - name: Run deploy playbook
         run: >
           ansible-playbook playbooks/deploy.yml
           --inventory inventory/production.ini
-          --limit primary
           --vault-password-file ~/.vault_pass
           --extra-vars "ansible_host=${{ secrets.PRODUCTION_HOST }} image_tag=${{ needs.build-and-push.outputs.image_tag }} ghcr_owner=${{ env.GHCR_OWNER_LC }}"
         working-directory: ${{ github.workspace }}/ansible
