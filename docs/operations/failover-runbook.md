@@ -11,6 +11,7 @@ The secondary (AWS EC2) runs its own `backend` container but shares the **same P
 
 ## Fail over
 
+0. **The secondary is no longer auto-deployed** — `cd-backend.yml` only deploys to the primary now, so the secondary is likely running stale code. Bring it up to date first with a manual deploy (see [deployment.md §8](deployment.md#8-manual-deploy-emergency)), targeting the secondary's Elastic IP.
 1. **Verify the secondary is actually healthy** before sending traffic to it:
    ```bash
    curl -f https://52-57-29-121.sslip.io/admin/

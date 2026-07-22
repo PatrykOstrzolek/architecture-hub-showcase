@@ -86,7 +86,7 @@ Key differences from the primary:
 - **Media uploads are not shared.** The secondary's `uploads` volume is local and empty — see the failover runbook's limitations section.
 - **IMDSv2 enforced.** `terraform/main.tf` sets `metadata_options.http_tokens = "required"`, blocking the older, SSRF-vulnerable IMDSv1 path to the instance metadata service.
 
-Deployed via the same `cd-backend.yml` pipeline, sequentially: `deploy-primary` then `deploy-secondary` (the secondary always waits for the primary's migration to land first). Infra provisioning (`cd-infra.yml`) takes a required `target: primary|secondary` input since it's a manual, deliberate trigger either way.
+Currently stopped and out of the routine release path — `cd-backend.yml` only deploys to the primary. App code reaches the secondary only via a manual `ansible-playbook playbooks/deploy.yml --limit secondary` run (see [deployment.md §8](deployment.md#8-manual-deploy-emergency)), typically right before a failover drill. Infra provisioning (`cd-infra.yml`) takes a required `target: primary|secondary` input since it's a manual, deliberate trigger either way.
 
 ## 4. Infrastructure as Code
 
