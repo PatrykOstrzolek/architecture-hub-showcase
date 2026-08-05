@@ -48,25 +48,9 @@ Afterwards, visit the official [Sulu documentation](http://docs.sulu.io/en/lates
 
 ## 🗄️&nbsp; Production: Initial Data Seeding
 
-After the first deploy, seed the production database from a local dump — no fixtures or `sulu:build` needed.
-
-**1. Export local database**
-```bash
-mysqldump -u root -p su_myapp > dump.sql
-```
-
-**2. Copy and import on the server**
-```bash
-scp dump.sql deploy@your-server:/opt/architecture-hub/
-ssh deploy@your-server \
-  "docker exec -i architecture-hub-db-1 psql -U \$DB_USER -d \$DB_DATABASE < /opt/architecture-hub/dump.sql"
-```
-
-**3. Reset the admin password**
-```bash
-ssh deploy@your-server \
-  "docker exec -it architecture-hub-backend-1 php bin/console sulu:security:user:change-password admin"
-```
+See [`docs/operations/deployment.md`](../docs/operations/deployment.md) §7 for the
+current process — content is seeded via Doctrine Fixtures (the same ones used in local
+dev), not a database dump.
 
 This is a one-time manual step. Re-deploys via CD do not touch the database.
 

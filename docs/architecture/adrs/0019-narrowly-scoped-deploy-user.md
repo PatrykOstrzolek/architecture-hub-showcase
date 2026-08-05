@@ -86,8 +86,17 @@ especially for a credential (the SSH private key) held by a CI runner on every p
   modules for the nginx vhost, and a `sudoers.j2` template + narrow command list to
   maintain in lockstep with `roles/nginx/tasks/main.yml` (a path or command changed in
   one without the other silently breaks the whitelist match)
-- Migrating the running server requires a manual, one-time cutover: create `ahdeploy`
-  (`bootstrap.yml`), move `docker-compose.yml`/`.env`/the Docker volumes' effective
-  ownership from the old `/opt/architecture-hub` (owned by `deploy`) to the new
-  `/home/ahdeploy/architecture-hub-showcase`, then re-point CI's `SSH_PRIVATE_KEY`
-  secret at `ahdeploy`'s key before the old `deploy` user's access is revoked
+- Migrating the running server required a manual, one-time cutover — **done
+  2026-08-05**: `bootstrap.yml` created `ahdeploy`; `docker-compose.prod.yml` got an
+  explicit top-level `name: architecture-hub` first (Compose otherwise derives the
+  project name from the directory basename, which would have made
+  `/home/ahdeploy/architecture-hub-showcase` create fresh, empty `db_data`/`uploads`
+  volumes instead of reusing the ones already populated under the old
+  `/opt/architecture-hub` project); running `deploy.yml` from the new location then
+  re-templated `docker-compose.yml`/`.env` there and Docker Compose picked up the
+  *existing* volumes and container names by project-name match, not by directory.
+  Verified via `docker ps` (same container names, uptime showing recreation not fresh
+  creation) and `/api/articles` returning real content post-cutover. CI's
+  `SSH_PRIVATE_KEY` secret was then re-pointed at `ahdeploy`'s key. The old
+  `/opt/architecture-hub` (stale `.env` with real secrets, no longer used by anything)
+  is left in place deliberately for now as a rollback safety net, not yet deleted
