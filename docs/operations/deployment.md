@@ -99,11 +99,33 @@ Set via `vercel env add` or the Vercel dashboard under **Project → Settings �
 |---|---|---|
 | `SULU_BASE_URL` | Production | `https://patrykapi.tojest.dev` |
 
-## 6. One-Time Server Provisioning
+## 6. One-Time Server Bootstrap
 
-Run once on a fresh VPS before the first deployment:
+`ansible/` in this repo assumes Docker, nginx, and UFW/fail2ban already exist on the
+target host — see [ADR-0018](../architecture/adrs/0018-drop-server-provisioning-ansible.md).
+That host-wide provisioning is out of scope here and lives in a separate
+[`mikrus-ansible`](https://github.com/PatrykOstrzolek/mikrus-ansible) repo, run once per
+fresh VPS (and shared by every service on that VPS).
+
+This repo's own one-time step — creating *this app's* dedicated, narrowly-scoped
+`ahdeploy` user (see [ADR-0019](../architecture/adrs/0019-narrowly-scoped-deploy-user.md))
+— is local-only, never run from CI (see `ansible/playbooks/bootstrap.yml`):
 
 ```bash
+cd ansible
+
+# 0a. One-time: generate a dedicated keypair for this project (do NOT reuse your
+#     personal key) — the private half is gitignored, only the .pub is tracked
+ssh-keygen -t ed25519 -f files/ahdeploy_ed25519 -C ahdeploy@architecture-hub-showcase -N ""
+
+# 0b. Once mikrus-ansible has provisioned the host, create ahdeploy (run as root,
+#     locally — never from CI)
+DEPLOY_SSH_PUBLIC_KEY="$(cat files/ahdeploy_ed25519.pub)"
+ansible-playbook playbooks/bootstrap.yml -i inventory/production.ini \
+  -e "ansible_host=YOUR_VPS_IP" \
+  -e "{\"deploy_ssh_public_key\": \"$DEPLOY_SSH_PUBLIC_KEY\"}"
+cd ..
+
 # 1. Fill in real values and encrypt secrets
 cp ansible/group_vars/all/vault.yml.example ansible/group_vars/all/vault.yml
 # edit vault.yml with real passwords/tokens, then:
@@ -111,16 +133,11 @@ ansible-vault encrypt ansible/group_vars/all/vault.yml
 
 # 2. Update ansible/group_vars/all/main.yml with your domain names and GitHub username
 
-# 3. Provision the server (installs Docker, nginx, renders the nginx vhost with correct server_names)
-#    Pass the VPS IP via ansible_host — the inventory uses a stable alias, never a hardcoded IP.
-cd ansible
-ansible-playbook playbooks/provision.yml -i inventory/production.ini \
-  -e "ansible_user=root ansible_host=YOUR_VPS_IP" --ask-vault-pass
+# 3. Push to main — cd-backend.yml runs deploy.yml, which templates the nginx
+#    vhost (roles/nginx) and deploys the app (roles/app) in one pass
 ```
 
 > **Mikrus note:** SSH port is 10130 (Mikrus NAT forwards to internal port 22). Nginx listens on `[::]:80` (IPv6 only — no dedicated IPv4). See `docs/operations/mikrus-server.md` (gitignored) for full server details.
-
-After provisioning, push to `main` to trigger the first automated deployment.
 
 ## 7. First-Deploy Database Initialisation (and content repair)
 
@@ -128,7 +145,7 @@ The automated deploy pipeline does **not** initialise the database. Run these on
 
 ```bash
 # Set these to match your server — see docs/operations/mikrus-server.md (gitignored)
-SERVER="ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST"
+SERVER="ssh -p YOUR_SSH_PORT ahdeploy@YOUR_VPS_HOST"
 CONTAINER="architecture-hub-backend-1"
 
 # 1. Create the Sulu schema (all tables)
@@ -215,7 +232,7 @@ Migrations remain the correct mechanism for *schema* changes going forward
 The seed migration sets the admin password to `!!` (disabled). Reset it after the first deploy:
 
 ```bash
-ssh -p YOUR_SSH_PORT deploy@YOUR_VPS_HOST \
+ssh -p YOUR_SSH_PORT ahdeploy@YOUR_VPS_HOST \
   "docker exec -it architecture-hub-backend-1 php bin/console app:user:set-password admin"
 # enters new password interactively (hidden input, confirmed twice)
 ```

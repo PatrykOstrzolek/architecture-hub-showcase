@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+# Narrow, command-scoped sudo for the architecture-hub nginx vhost — nothing else.
+{{ app_user }} ALL=(root) NOPASSWD: {{ bootstrap_user_sudo_commands | join(', ') }}

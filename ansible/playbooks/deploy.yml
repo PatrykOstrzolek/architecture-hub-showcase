@@ -1,7 +1,9 @@
 ---
+# Runs as ahdeploy — no become. Docker access comes from group membership; the only
+# root-requiring steps (nginx vhost publish + reload) are the four commands whitelisted
+# in roles/bootstrap_user's sudoers.d, invoked directly as raw sudo commands. See ADR-0018.
 - name: Deploy application
   hosts: web
-  become: true
 
   vars_files:
     - ../group_vars/all/main.yml
@@ -9,3 +11,4 @@
 
   roles:
     - app
+    - nginx

@@ -1,0 +1,15 @@
+---
+# One-off — run locally by hand, never from CI. Requires a host already bootstrapped by
+# mikrus-ansible (Docker, nginx, UFW, fail2ban present) but not yet aware of this app's
+# deploy user. Runs as root directly (no become — already root). Re-run only if the
+# deploy user gets removed/reset. See ADR-0018.
+- name: Bootstrap the ahdeploy user
+  hosts: web
+  vars:
+    ansible_user: root
+
+  vars_files:
+    - ../group_vars/all/main.yml
+
+  roles:
+    - bootstrap_user

@@ -29,3 +29,5 @@ alternatives considered, and the trade-offs accepted.
 | [0014](0014-question-set-entities.md) | Normalized Question/QuestionSet Entities, Replacing Content-Type-Based Exercise Authoring | Accepted |
 | [0015](0015-sitemap-and-robots-generation.md) | Generate sitemap.xml and robots.txt in Next.js | Accepted |
 | [0017](0017-mise-managed-host-php-for-local-dev.md) | Mise-Managed Host PHP for Local Development | Accepted |
+| [0018](0018-drop-server-provisioning-ansible.md) | Drop Base Server Provisioning from This Repo's Ansible | Accepted |
+| [0019](0019-narrowly-scoped-deploy-user.md) | Dedicated, Narrowly-Scoped Deploy User (`ahdeploy`) | Accepted |

@@ -1,32 +1,37 @@
 ---
-- name: Install nginx
-  ansible.builtin.apt:
-    name:
-      - nginx
-    state: present
+# nginx package/service assumed already installed — see ADR-0018 (mikrus-ansible).
+# Runs as ahdeploy, no become at the play level. Ansible modules under `become` don't
+# match a static sudoers.d whitelist (they invoke a dynamically-pathed Python module, not
+# a fixed command line), so the root-requiring steps below are raw commands instead,
+# matching exactly the four commands whitelisted in roles/bootstrap_user's sudoers.d.
+# Mirrors rediscovering-joomla's joomla role, which established this pattern first.
 
-- name: Remove default nginx site
-  ansible.builtin.file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-
-- name: Deploy virtual host config
+- name: Render the vhost config (staged, owned by {{ app_user }} — no sudo needed yet)
   ansible.builtin.template:
     src: app.conf.j2
-    dest: /etc/nginx/sites-available/architecture-hub
+    dest: "{{ app_dir }}/architecture-hub.conf"
     mode: "0644"
-  notify: Reload nginx
 
-- name: Enable site
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/architecture-hub
-    dest: /etc/nginx/sites-enabled/architecture-hub
-    state: link
-    force: true
-  notify: Reload nginx
+- name: Publish the vhost into sites-available (whitelisted sudo command)
+  ansible.builtin.command:
+    cmd: "sudo /usr/bin/cp {{ app_dir }}/architecture-hub.conf /etc/nginx/sites-available/architecture-hub"
+  changed_when: true
 
-- name: Enable and start nginx
-  ansible.builtin.systemd:
-    name: nginx
-    enabled: true
-    state: started
+- name: Enable the vhost (whitelisted sudo command)
+  ansible.builtin.command:
+    cmd: sudo /usr/bin/ln -sf /etc/nginx/sites-available/architecture-hub /etc/nginx/sites-enabled/architecture-hub
+  changed_when: true
+
+- name: Validate nginx config (whitelisted sudo command)
+  ansible.builtin.command:
+    cmd: sudo /usr/sbin/nginx -t
+  changed_when: false
+
+# Not a notify/handler: changed_when: false above means the validate task itself never
+# reports "changed", so a notify from it would never fire. Reload unconditionally instead
+# — cheap and safe (nginx reload doesn't drop connections), and only runs after the
+# validate task above has already confirmed the config is sound.
+- name: Reload nginx (whitelisted sudo command)
+  ansible.builtin.command:
+    cmd: sudo /usr/bin/systemctl reload nginx
+  changed_when: true

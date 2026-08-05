@@ -37,17 +37,23 @@ fetches content from the Sulu headless API over the public internet via
 ### Backend — VPS (Mikrus)
 
 [Mikrus](https://mikr.us) VPS running Ubuntu, plan 2.1 (1 GB RAM, 10 GB NVMe, Finland).
-Provisioned once via Ansible (`ansible/playbooks/provision.yml`).
+Also hosts an unrelated second service — nginx, Docker, and base OS packages are shared
+between them.
+
+Host-wide provisioning (Docker CE + Compose plugin, nginx package, UFW, fail2ban) is
+done once via [`mikrus-ansible`](https://github.com/PatrykOstrzolek/mikrus-ansible), a
+separate repo outside this one — see
+[ADR-0018](../architecture/adrs/0018-drop-server-provisioning-ansible.md). This app's
+own `ahdeploy` user, by contrast, is *not* shared or host-wide: it's created by this
+repo's own `ansible/playbooks/bootstrap.yml`, run locally by hand, one-time, never from
+CI, with a narrowly-scoped sudoers (nginx vhost commands only, not full sudo) — see
+[ADR-0019](../architecture/adrs/0019-narrowly-scoped-deploy-user.md). This repo's
+regular (CI-driven) Ansible only templates the app-specific nginx vhost and deploys the
+app — no privilege escalation beyond those four whitelisted commands.
 
 **Networking:** Mikrus provides no dedicated IPv4. Web traffic reaches the server via IPv6.
 Mikrus subdomains (`patrykarc.tojest.dev`, `patrykapi.tojest.dev`) proxy HTTPS → nginx on port 80.
 SSH uses port-forwarding: external port 10130 → internal port 22.
-
-Installed by the `common` and `docker` Ansible roles:
-- Docker CE + Compose plugin
-- nginx (host-level reverse proxy, listens on `[::]:80`)
-- UFW firewall (allows ports 22/80/443)
-- fail2ban
 
 ### Application services
 
@@ -62,7 +68,8 @@ Both ports are bound to `127.0.0.1` — not publicly reachable. All public traff
 
 ### nginx (host-level)
 
-Configured by the `nginx` Ansible role. Two virtual hosts:
+nginx itself is installed by the external bootstrap process. This repo's `nginx` Ansible
+role only templates the app vhost — two virtual hosts:
 
 - `api.yourdomain.com` → proxies to Sulu (`127.0.0.1:8000`) — consumed by Vercel frontend
 - `admin.yourdomain.com` → proxies to Sulu (`127.0.0.1:8000`) — Sulu admin UI
@@ -76,7 +83,8 @@ Docker images are built in CI and pushed to **GitHub Container Registry (GHCR)**
 
 ## 4. Infrastructure as Code
 
-All server configuration is in `ansible/`:
+Application-level server configuration is in `ansible/` (base OS provisioning lives
+outside this repo — see [ADR-0018](../architecture/adrs/0018-drop-server-provisioning-ansible.md)):
 
 ```
 ansible/
@@ -88,14 +96,15 @@ ansible/
     all.yml                 # non-secret variables (domain, api_domain, paths)
     vault.yml               # encrypted secrets (ansible-vault)
     vault.yml.example       # template — copy and encrypt before use
+  files/
+    ahdeploy_ed25519.pub     # tracked — private half is gitignored
   roles/
-    common/                 # system packages, deploy user, UFW
-    docker/                 # Docker CE + Compose plugin
-    nginx/                  # nginx install + virtual host config
-    app/                    # docker compose pull + restart + cache warmup
+    bootstrap_user/          # creates ahdeploy, narrow sudoers (local-only, never CI)
+    nginx/                   # app vhost config, raw sudo cmds (assumes nginx installed)
+    app/                     # docker compose pull + restart + cache warmup
   playbooks/
-    provision.yml           # one-time server setup
-    deploy.yml              # runs on every release
+    bootstrap.yml            # one-time, local-only: creates ahdeploy
+    deploy.yml                # runs on every release: nginx vhost + app
 ```
 
 Secrets are stored in `ansible/group_vars/vault.yml`, encrypted with Ansible Vault. The vault

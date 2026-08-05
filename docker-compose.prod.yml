@@ -1,3 +1,8 @@
+name: architecture-hub
+# Pinned regardless of which directory this file is deployed from — Compose defaults the
+# project name to the directory basename, which would silently create new, empty
+# db_data/uploads volumes if that directory ever moves or is renamed (see ADR-0019).
+
 services:
   db:
     image: postgres:16

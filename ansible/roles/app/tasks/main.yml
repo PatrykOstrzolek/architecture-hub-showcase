@@ -1,10 +1,12 @@
 ---
+# Runs as ahdeploy, no become — docker group membership covers everything here (compose,
+# exec, login). app_dir lives inside ahdeploy's own home, so no root is needed to create
+# it either. See ADR-0018.
+
 - name: Create application directory
   ansible.builtin.file:
     path: "{{ app_dir }}"
     state: directory
-    owner: "{{ app_user }}"
-    group: "{{ app_user }}"
     mode: "0755"
 
 - name: Log in to GHCR
@@ -17,16 +19,12 @@
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
     dest: "{{ app_dir }}/docker-compose.yml"
-    owner: "{{ app_user }}"
-    group: "{{ app_user }}"
     mode: "0644"
 
 - name: Template .env file
   ansible.builtin.template:
     src: .env.j2
     dest: "{{ app_dir }}/.env"
-    owner: "{{ app_user }}"
-    group: "{{ app_user }}"
     mode: "0600"
 
 - name: Prune unused Docker images to free disk space
@@ -55,8 +53,6 @@
     command: php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
     cleanup: true
     no_deps: true
-  become: true
-  become_user: "{{ app_user }}"
   async: 300
   poll: 5
 
@@ -82,6 +78,4 @@
   ansible.builtin.command: >
     docker exec architecture-hub-backend-1
     php bin/console cache:warmup --env=prod
-  become: true
-  become_user: "{{ app_user }}"
   changed_when: true

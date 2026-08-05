@@ -1,0 +1,31 @@
+---
+# One-off, run locally by hand (see ansible/playbooks/bootstrap.yml) — never wired into
+# CI. Creates a dedicated, narrowly-scoped user for this app, isolated from the
+# `deploy` user (which belongs to mikrus-ansible and has full sudo — see ADR-0018).
+# ahdeploy gets: docker group (for docker compose, no sudo needed) + a narrow,
+# command-scoped sudoers.d drop-in (only what's needed to publish the nginx vhost) +
+# a locked password (SSH key only). Mirrors rediscovering-joomla's bootstrap_user role,
+# which established this pattern first on this same VPS.
+- name: Create {{ app_user }} user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    groups: docker
+    append: true
+    shell: /bin/bash
+    password: "!"
+    create_home: true
+
+- name: Authorize the project-specific SSH key for {{ app_user }}
+  ansible.posix.authorized_key:
+    user: "{{ app_user }}"
+    key: "{{ lookup('file', bootstrap_user_pubkey_file) }}"
+    state: present
+
+- name: Install narrow, command-scoped sudoers drop-in
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ app_user }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"

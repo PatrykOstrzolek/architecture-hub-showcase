@@ -28,7 +28,7 @@ It also includes a full CI/CD and infra setup — not the main point, but real a
 
 - **CI pipeline**: PHPStan, PHP CS Fixer, PHPUnit, Trivy, Semgrep, npm audit — running in parallel on every push
 - **CD pipeline**: Docker image build → GHCR → Ansible deploy to VPS; frontend to Vercel
-- **Infrastructure as code**: Ansible roles for provisioning (Docker, nginx, UFW, fail2ban) and rolling deploys
+- **Infrastructure as code**: Ansible roles for the app nginx vhost and rolling deploys (base server provisioning is a separate one-time bootstrap, outside this repo)
 - **Security hardening**: HTTP security headers, HTML sanitization, Symfony profiler disabled in prod, secrets out of git
 
 ---

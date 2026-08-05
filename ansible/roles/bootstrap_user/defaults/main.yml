@@ -1,0 +1,20 @@
+---
+# playbook_dir here is ansible/playbooks/ (bootstrap.yml's own dir, unlike
+# rediscovering-joomla where the playbook lives directly under ansible/) — go up one
+# level to land in ansible/files/, not ansible/playbooks/files/.
+bootstrap_user_pubkey_file: "{{ playbook_dir }}/../files/ahdeploy_ed25519.pub"
+
+# Commands ahdeploy is allowed to run as root without a password. Deliberately narrow —
+# no blanket sudo, unlike the `deploy` user (mikrus-ansible, full sudo — see ADR-0018).
+#
+# The `cp` source is a fully-qualified, hardcoded literal path — NOT a wildcard. A `*` in
+# a command *argument* (as opposed to the command path itself) matches `/` too, so a
+# wildcarded source would let ahdeploy copy ANY file on the system (e.g. /etc/shadow) to
+# that destination via sudo (see sudoers(5)). Since the source is always the same staged
+# file, there's no reason to wildcard it. Must match roles/nginx/tasks/main.yml's staged
+# file path + app_dir exactly.
+bootstrap_user_sudo_commands:
+  - /usr/sbin/nginx -t
+  - /usr/bin/systemctl reload nginx
+  - /usr/bin/cp /home/ahdeploy/architecture-hub-showcase/architecture-hub.conf /etc/nginx/sites-available/architecture-hub
+  - /usr/bin/ln -sf /etc/nginx/sites-available/architecture-hub /etc/nginx/sites-enabled/architecture-hub

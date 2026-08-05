@@ -1,5 +1,4 @@
 ---
-- name: Reload nginx
-  ansible.builtin.systemd:
-    name: nginx
-    state: reloaded
+# Intentionally empty — nginx reload is a plain task in tasks/main.yml, not a handler.
+# See the comment there: changed_when: false on the preceding validate task meant a
+# notify from it would never fire, so it's an unconditional task instead.
