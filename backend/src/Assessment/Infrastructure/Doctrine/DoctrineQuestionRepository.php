@@ -45,36 +45,6 @@ final readonly class DoctrineQuestionRepository implements QuestionRepositoryInt
         return $this->findByIdsPreservingOrder($this->em, Question::class, $ids);
     }
 
-    /**
-     * @return list<Question>
-     */
-    public function findPaginated(int $page, int $limit): array
-    {
-        /** @var list<Question> $result */
-        $result = $this->em->createQueryBuilder()
-            ->select('q')
-            ->from(Question::class, 'q')
-            ->orderBy('q.id', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        return $result;
-    }
-
-    public function count(): int
-    {
-        /** @var int|string $total */
-        $total = $this->em->createQueryBuilder()
-            ->select('COUNT(q.id)')
-            ->from(Question::class, 'q')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return (int) $total;
-    }
-
     public function save(Question $question): void
     {
         $this->em->persist($question);

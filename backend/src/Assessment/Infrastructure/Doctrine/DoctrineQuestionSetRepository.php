@@ -11,8 +11,6 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineQuestionSetRepository implements QuestionSetRepositoryInterface
 {
-    use PreservesRequestedIdOrder;
-
     public function __construct(private EntityManagerInterface $em)
     {
     }
@@ -36,46 +34,6 @@ final readonly class DoctrineQuestionSetRepository implements QuestionSetReposit
             ->getOneOrNullResult();
 
         return $result instanceof QuestionSet ? $result : null;
-    }
-
-    /**
-     * @param list<int> $ids
-     *
-     * @return list<QuestionSet>
-     */
-    public function findByIds(array $ids): array
-    {
-        return $this->findByIdsPreservingOrder($this->em, QuestionSet::class, $ids);
-    }
-
-    /**
-     * @return list<QuestionSet>
-     */
-    public function findPaginated(int $page, int $limit): array
-    {
-        /** @var list<QuestionSet> $result */
-        $result = $this->em->createQueryBuilder()
-            ->select('qs')
-            ->from(QuestionSet::class, 'qs')
-            ->orderBy('qs.id', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        return $result;
-    }
-
-    public function count(): int
-    {
-        /** @var int|string $total */
-        $total = $this->em->createQueryBuilder()
-            ->select('COUNT(qs.id)')
-            ->from(QuestionSet::class, 'qs')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return (int) $total;
     }
 
     /**

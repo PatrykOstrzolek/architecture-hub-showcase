@@ -12,11 +12,12 @@ if [ -n "$STAGED_PHP" ]; then
   echo "PHP files staged — running CS Fixer and PHPStan..."
 
   # Auto-fix code style on staged files and re-stage them
-  # (no host PHP — everything runs inside the running `php` container)
-  (cd backend && echo "$STAGED_PHP" | sed 's|^backend/||' | xargs docker compose exec -T php vendor/bin/php-cs-fixer fix)
+  # (PHP runs on the host via mise — see ADR-0017 — not in a Docker container;
+  # Docker is only used for Postgres + Mailpit now)
+  (cd backend && echo "$STAGED_PHP" | sed 's|^backend/||' | xargs vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php)
   echo "$STAGED_PHP" | xargs git add
 
   # Full project type-check (result cache makes this fast after the first run)
-  (cd backend && docker compose exec -T php vendor/bin/phpstan analyse \
+  (cd backend && vendor/bin/phpstan analyse \
     --configuration=phpstan.ci.neon --no-progress)
 fi

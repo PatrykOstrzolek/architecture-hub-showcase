@@ -3,7 +3,13 @@
     <key>question_sets</key>
 
     <properties>
-        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id" />
-        <property name="title" visibility="always" searchability="yes" translation="Title" />
+        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id">
+            <field-name>id</field-name>
+            <entity-name>App\Assessment\Domain\Model\QuestionSet</entity-name>
+        </property>
+        <property name="title" visibility="always" searchability="yes" translation="Title">
+            <field-name>title</field-name>
+            <entity-name>App\Assessment\Domain\Model\QuestionSet</entity-name>
+        </property>
     </properties>
 </list>

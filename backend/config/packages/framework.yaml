@@ -12,6 +12,12 @@ framework:
     #esi: true
     #fragments: true
 
+when@dev:
+    framework:
+        session:
+            cookie_lifetime: 31536000 # 1 year — dev convenience, never expire mid-session while poking at the admin
+            gc_maxlifetime: 31536000
+
 when@test:
     framework:
         test: true

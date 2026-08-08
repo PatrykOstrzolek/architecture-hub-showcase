@@ -24,21 +24,6 @@ interface QuestionRepositoryInterface
      */
     public function findByIds(array $ids): array;
 
-    /**
-     * Bounded, ordered (id DESC) page of Questions — used by the admin list
-     * path when no `ids` filter is present. Replaces the previous unbounded
-     * findAll() call on that path.
-     *
-     * @return list<Question>
-     */
-    public function findPaginated(int $page, int $limit): array;
-
-    /**
-     * Total Question count, unfiltered — used to compute PaginatedRepresentation's
-     * total/pages alongside findPaginated().
-     */
-    public function count(): int;
-
     public function save(Question $question): void;
 
     public function remove(Question $question): void;

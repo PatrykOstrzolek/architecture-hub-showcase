@@ -19,36 +19,6 @@ final readonly class DoctrineAttemptRepository implements AttemptRepositoryInter
         return $this->em->find(Attempt::class, $id);
     }
 
-    /**
-     * @return list<Attempt>
-     */
-    public function findPaginated(int $page, int $limit): array
-    {
-        /** @var list<Attempt> $result */
-        $result = $this->em->createQueryBuilder()
-            ->select('a')
-            ->from(Attempt::class, 'a')
-            ->orderBy('a.createdAt', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        return $result;
-    }
-
-    public function count(): int
-    {
-        /** @var int|string $total */
-        $total = $this->em->createQueryBuilder()
-            ->select('COUNT(a.id)')
-            ->from(Attempt::class, 'a')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return (int) $total;
-    }
-
     public function save(Attempt $attempt): void
     {
         $this->em->persist($attempt);

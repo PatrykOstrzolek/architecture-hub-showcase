@@ -3,11 +3,30 @@
     <key>attempts</key>
 
     <properties>
-        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id" />
-        <property name="exerciseUuid" visibility="always" searchability="yes" translation="Exercise" />
-        <property name="sessionId" visibility="yes" searchability="yes" translation="Session" />
-        <property name="score" visibility="always" searchability="no" translation="Score" />
-        <property name="total" visibility="always" searchability="no" translation="Total" />
-        <property name="createdAt" visibility="always" searchability="no" translation="Submitted at" />
+        <property name="id" visibility="no" searchability="no" translation="sulu_admin.id">
+            <field-name>id</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+        </property>
+        <property name="exerciseUuid" visibility="always" searchability="yes" translation="Exercise">
+            <field-name>exerciseUuid</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+        </property>
+        <property name="sessionId" visibility="yes" searchability="yes" translation="Session">
+            <field-name>sessionId</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+        </property>
+        <property name="score" visibility="always" searchability="no" translation="Score">
+            <field-name>score</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+        </property>
+        <property name="total" visibility="always" searchability="no" translation="Total">
+            <field-name>total</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+        </property>
+        <property name="createdAt" visibility="always" searchability="no" translation="Submitted at">
+            <field-name>createdAt</field-name>
+            <entity-name>App\Assessment\Domain\Model\Attempt</entity-name>
+            <transformer type="datetime"/>
+        </property>
     </properties>
 </list>
