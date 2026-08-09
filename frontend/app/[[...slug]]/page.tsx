@@ -2,26 +2,28 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 
 import { getContent, getArticles } from "@/lib/sulu"
-import { ArticleView } from "@/components/content/article-view"
-import { AuthorView } from "@/components/content/author-view"
-import { AuthorsListingView } from "@/components/content/authors-listing-view"
-import { ExerciseView } from "@/components/content/exercise-view"
-import { HomeView } from "@/components/content/home-view"
-import { LearningPathsListingView } from "@/components/content/learning-paths-listing-view"
-import { LearningPathView } from "@/components/content/learning-path-view"
-import { PageView } from "@/components/content/page-view"
+import { ArticleView } from "@/features/article/article-view"
+import { AuthorView } from "@/features/author/author-view"
+import { AuthorsListingView } from "@/features/author/authors-listing-view"
+import { ExerciseView } from "@/features/exercise/exercise-view"
+import { HomeView } from "@/features/home/home-view"
+import { LearningPathsListingView } from "@/features/learning-path/learning-paths-listing-view"
+import { LearningPathView } from "@/features/learning-path/learning-path-view"
+import { PageView } from "@/features/page/page-view"
+import type { ArticleContent } from "@/features/article/types"
 import type {
-  ArticleContent,
   AuthorContent,
   AuthorsListingContent,
-  ExerciseContent,
-  HomeContent,
+} from "@/features/author/types"
+import type { ExerciseContent } from "@/features/exercise/types"
+import type { HomeContent } from "@/features/home/types"
+import type {
   LearningPathContent,
-  LearningPathContext,
   LearningPathsListingContent,
-  PageContent,
-} from "@/components/content/types"
-import { articleHref } from "@/components/content/types"
+} from "@/features/learning-path/types"
+import type { PageContent } from "@/features/page/types"
+import type { LearningPathContext } from "@/features/shared/content-types"
+import { articleHref } from "@/features/shared/content-types"
 
 /**
  * Headless catch-all. Every public URL maps 1:1 to a Sulu resource locator;

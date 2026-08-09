@@ -2,7 +2,8 @@ import Link from "next/link"
 import { mediaUrl } from "@/lib/sulu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
-import { articleHref, type AuthorContent } from "./types"
+import { articleHref } from "@/features/shared/content-types"
+import type { AuthorContent } from "./types"
 
 function initials(name: string): string {
   return name

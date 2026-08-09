@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { LearningPathContent } from "./types"
-import { articleHref } from "./types"
+import { articleHref } from "@/features/shared/content-types"
 
 export function LearningPathView({
   content,

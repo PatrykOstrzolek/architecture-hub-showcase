@@ -1,10 +1,8 @@
 import type { MetadataRoute } from "next"
 
 import { getArticles, getContent, type ArticlesPage } from "@/lib/sulu"
-import type {
-  AuthorsListingContent,
-  LearningPathsListingContent,
-} from "@/components/content/types"
+import type { AuthorsListingContent } from "@/features/author/types"
+import type { LearningPathsListingContent } from "@/features/learning-path/types"
 import { SITE_URL } from "@/lib/site"
 
 /**

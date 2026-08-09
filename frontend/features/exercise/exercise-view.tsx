@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { CheckCircle, XCircle } from "@phosphor-icons/react"
+import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { getAnonymousSessionId } from "@/lib/anonymous-session"
 import { Button } from "@/components/ui/button"
@@ -55,8 +55,17 @@ export function ExerciseView({
 
   async function submit() {
     setState((s) => ({ ...s, submitting: true, error: null }))
+
+    const fail = () =>
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        error: "Couldn't submit your answers. Please try again.",
+      }))
+
+    let res: Response
     try {
-      const res = await fetch("/api/exercise-attempts", {
+      res = await fetch("/api/exercise-attempts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,16 +74,18 @@ export function ExerciseView({
           answers: state.answers,
         }),
       })
-      if (!res.ok) throw new Error("Submission failed")
-      const result = (await res.json()) as ExerciseGradeResult
-      setState((s) => ({ ...s, submitting: false, result }))
     } catch {
-      setState((s) => ({
-        ...s,
-        submitting: false,
-        error: "Couldn't submit your answers. Please try again.",
-      }))
+      fail()
+      return
     }
+
+    if (!res.ok) {
+      fail()
+      return
+    }
+
+    const result = (await res.json()) as ExerciseGradeResult
+    setState((s) => ({ ...s, submitting: false, result }))
   }
 
   return (
@@ -195,13 +206,13 @@ function QuestionCard({
                 <span>{option.text}</span>
               </span>
               {submitted && isCorrectOption ? (
-                <CheckCircle
+                <CheckCircleIcon
                   weight="fill"
                   className="size-4 shrink-0 text-emerald-500"
                 />
               ) : null}
               {submitted && isSelected && !isCorrectOption ? (
-                <XCircle
+                <XCircleIcon
                   weight="fill"
                   className="size-4 shrink-0 text-red-500"
                 />

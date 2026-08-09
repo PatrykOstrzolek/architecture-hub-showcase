@@ -2,7 +2,8 @@ import Link from "next/link"
 import { mediaUrl, type SuluSearchHit } from "@/lib/sulu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BlockRenderer } from "./block-renderer"
-import type { ArticleContent, LearningPathContext } from "./types"
+import type { ArticleContent } from "./types"
+import type { LearningPathContext } from "@/features/shared/content-types"
 import { SITE_URL } from "@/lib/site"
 
 function formatDate(iso: string | null): string | null {
